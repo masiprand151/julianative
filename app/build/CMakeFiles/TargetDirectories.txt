@@ -1,0 +1,5 @@
+C:/dev/julianative/app/build/CMakeFiles/JuliaNative.dir
+C:/dev/julianative/app/build/CMakeFiles/edit_cache.dir
+C:/dev/julianative/app/build/CMakeFiles/rebuild_cache.dir
+C:/dev/julianative/app/build/CMakeFiles/JuliaNative_autogen_timestamp_deps.dir
+C:/dev/julianative/app/build/CMakeFiles/JuliaNative_autogen.dir

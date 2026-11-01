@@ -1,0 +1,7 @@
+{
+  "watch": ["app", "src"],
+  "ext": "cpp,h,hpp,ts,js",
+  "ignore": ["app/build/**", "app/build", "app/*.exe", "node_modules/**"],
+  "exec": "npm run dev:restart",
+  "delay": "500"
+}
