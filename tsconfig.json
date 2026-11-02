@@ -3,13 +3,18 @@
     "target": "ES2020",
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "app/build",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "declaration": true,
-    "types": ["node"]
+    "types": ["node"],
+
+    "paths": {
+      "@julia/core": ["./app/core/index.ts"],
+      "@julia/core/*": ["./app/core/*"]
+    }
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "app/core/**/*.ts"]
 }
