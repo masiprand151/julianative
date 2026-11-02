@@ -1,37 +1,27 @@
 declare const process: any;
 
-import { VNode, EventHandler } from "./types";
+import { VNode } from "./types";
+import { dispatchEvent } from "./components/Button";
 
-const callbacks = new Map<string, EventHandler>();
-let eventCounter = 0;
-
+// Mengubah VNode menjadi JSON untuk dikirim ke C++.
 function serialize(node: VNode): any {
-  const events: Record<string, string> = {};
-
-  if (node.events) {
-    for (const [name, callback] of Object.entries(node.events)) {
-      const id = `julia_event_${++eventCounter}`;
-
-      callbacks.set(id, callback);
-      events[name] = id;
-    }
-  }
-
   return {
     type: node.type,
     props: node.props,
-    events,
+    events: node.events || {},
     children: (node.children || []).map(serialize),
   };
 }
+
+// Mengirim UI ke native runtime.
 export function render(root: VNode): void {
   const result = serialize(root);
   const output = JSON.stringify(result);
 
-  console.error("[Julia] Sending UI:", output);
-
   process.stdout.write("__JULIA_UI__" + output + "\n");
 }
+
+// Menerima event dari native C++.
 export function listenNativeEvents(): void {
   let buffer = "";
 
@@ -52,11 +42,7 @@ export function listenNativeEvents(): void {
         const message = JSON.parse(line);
 
         if (message.type === "click") {
-          const callback = callbacks.get(message.id);
-
-          if (callback) {
-            callback();
-          }
+          dispatchEvent(message.id);
         }
       } catch (error) {
         console.error("Native event error:", error);

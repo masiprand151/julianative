@@ -1,12 +1,13 @@
 export type ComponentType = "Widget" | "Column" | "Row" | "Text" | "Button";
 
 export type EventHandler = (...args: any[]) => void;
+export type EventMap = Record<string, string>;
 
 export interface VNode {
   type: ComponentType;
-  props: Record<string, any>;
+  props?: Record<string, any>;
   children?: VNode[];
-  events?: Record<string, EventHandler>;
+  events?: EventMap;
 }
 
 export interface WidgetProps {

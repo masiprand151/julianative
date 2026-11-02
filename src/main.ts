@@ -29,7 +29,7 @@ function Main() {
               Button({
                 text: "Click Me",
                 onClick: () => {
-                  console.log("Button clicked!");
+                  console.log("clicked!");
                 },
               }),
 
@@ -37,6 +37,7 @@ function Main() {
                 text: "Exit",
                 onClick: () => {
                   console.log("Exit clicked!");
+                  Application.exit();
                 },
               }),
             ],

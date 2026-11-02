@@ -23,7 +23,13 @@ set(APP_SOURCES
     app/main.cpp
 )
 
-add_executable(JuliaNative WIN32
+# ---- release remove comments ----
+# add_executable(JuliaNative WIN32
+#     ${APP_SOURCES}
+# )
+
+# ---- DEBUG ----
+add_executable(JuliaNative 
     ${APP_SOURCES}
 )
 

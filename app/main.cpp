@@ -33,6 +33,9 @@ public:
     {
         node = new QProcess(this);
         window = new QWidget();
+        // Memisahkan output stdout dan stderr Node.js.
+        node->setProcessChannelMode(QProcess::SeparateChannels);
+
 
         // Pengaturan awal window.
         window->setWindowTitle("JuliaNative");
@@ -41,6 +44,7 @@ public:
         // Menerima output dari Node.js ketika tersedia.
         connect(node, &QProcess::readyReadStandardOutput,
             this, [this]() {
+                
 
                 // Menggabungkan data baru dengan data yang belum selesai dibaca.
                 buffer += node->readAllStandardOutput();
@@ -57,12 +61,42 @@ public:
 
                     // Penanda khusus untuk membedakan pesan UI dari output biasa.
                     const QByteArray prefix = "__JULIA_UI__";
-
-                    // Jika data memiliki penanda UI, teruskan ke renderer.
                     if (line.startsWith(prefix)) {
-                        renderUI(line.mid(prefix.size()));
+                        QByteArray json = line.mid(prefix.size());
+
+                        QJsonDocument doc = QJsonDocument::fromJson(json);
+
+                        if (!doc.isObject()) continue;
+
+                        QJsonObject message = doc.object();
+
+                        QString type = message["type"].toString();
+
+                        // Perintah dari JavaScript
+                        if (type == "command") {
+                            QString command = message["command"].toString();
+                            // Jika perintah adalah "exit", tutup aplikasi.
+                            if (command == "exit") {
+                                QCoreApplication::quit();
+                            }
+                        }
+                        // Pesan untuk render UI
+                        else {
+                            renderUI(json);
+                        }
                     }
+                    // Jika data memiliki penanda UI, teruskan ke renderer.
+                    // if (line.startsWith(prefix)) {
+                    //     renderUI(line.mid(prefix.size()));
+                    // }
                 }
+            }
+        );
+
+        connect(node, &QProcess::readyReadStandardError,
+            this, [this]() {
+                QByteArray error = node->readAllStandardError();
+                qDebug().noquote() << "[NODE STDERR]" << error;
             }
         );
     }
@@ -187,6 +221,7 @@ public:
                 this, [this, eventId]() {
 
                     if (eventId.isEmpty()) return;
+                   
 
                     // Membuat pesan event untuk dikirim ke Node.js.
                     QJsonObject message;
@@ -197,9 +232,8 @@ public:
                     QByteArray data =
                         QJsonDocument(message)
                             .toJson(QJsonDocument::Compact);
-
                     // Mengirim event melalui stdin proses Node.js.
-                    node->write(data + "\n");
+                   qint64 written = node->write(data + "\n");
                 }
             );
 
