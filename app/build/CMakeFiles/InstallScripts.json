@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"C:/dev/julianative/app/build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

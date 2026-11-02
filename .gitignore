@@ -1,8 +1,22 @@
+
+# Dependencies
 node_modules/
+
+# Environment
+.env
+.env.*
+
+# Distribution
 dist/
 build/
-.env
-/app/build/*
+out/
+
+# JuliaNative development build
+/app/build/
+
+# Portable application
+/portable/
+
 # CMake generated files
 CMakeLists.txt.user
 CMakeCache.txt
@@ -32,5 +46,3 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
-# Add this line
-out/

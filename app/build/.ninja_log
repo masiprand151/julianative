@@ -1,8 +1,0 @@
-# ninja log v7
-164	596	8153589242275133	JuliaNative_autogen/timestamp	f1fcce0e35b7d953
-164	596	8153589242275133	JuliaNative_autogen/mocs_compilation.cpp	f1fcce0e35b7d953
-164	596	8153589242275133	C:/dev/julianative/app/build/JuliaNative_autogen/timestamp	f1fcce0e35b7d953
-164	596	8153589242275133	C:/dev/julianative/app/build/JuliaNative_autogen/mocs_compilation.cpp	f1fcce0e35b7d953
-477	756	8153562051893505	CMakeFiles/JuliaNative.dir/JuliaNative_autogen/mocs_compilation.cpp.obj	2f65f5f4d8478d8b
-599	6202	8153589246626262	CMakeFiles/JuliaNative.dir/app/main.cpp.obj	5fae7b7660b5c00
-6203	6587	8153589302669422	JuliaNative.exe	e40118021b4fd7ef
