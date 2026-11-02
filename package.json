@@ -10,7 +10,9 @@
     "build:app": "npm run build:ts && npm run configure:app && cmake --build app/build",
     "app": "npm run build:app && bash -lc './app/build/JuliaNative.exe'",
     "dev": "nodemon",
-    "dev:restart": "npm run build:ts && npm run app"
+    "dev:restart": "npm run build:ts && npm run app",
+    "prepare:portable": "node scripts/prepare-portable.cjs",
+    "portable": "npm run build:app && npm run prepare:portable"
   },
   "repository": {
     "type": "git",
