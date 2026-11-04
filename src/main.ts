@@ -1,41 +1,76 @@
 import { Application, Widget, Column, Row, Text, Button } from "@julia/core";
+import { View } from "@julia/core/components/View";
 
 function Main() {
   return Widget({
-    title: "Julia Native",
-    width: 500,
-    height: 350,
+    title: "Style Test",
+    width: 1024,
+    height: 768,
+    style: {
+      padding: 18,
+      gap: 12,
+      backgroundColor: "#f5f7f6",
+    },
 
     body: [
       Column({
-        spacing: 15,
-        padding: 20,
-
+        style: {
+          gap: 14,
+          padding: 18,
+          backgroundColor: "#e8f0ee",
+          borderColor: "#b8cbc5",
+          borderWidth: 1,
+          borderRadius: 8,
+        },
         children: [
-          Text("Welcome to Julia Native", {
-            fontSize: 24,
-            fontWeight: "bold",
+          Text("Style semua komponen", {
+            style: {
+              fontSize: 24,
+              fontWeight: "bold",
+              color: "#193b35",
+            },
           }),
-
-          Text("Native Desktop Framework"),
-
+          Text("Widget, Column, Row, View, Text, Button", {
+            style: {
+              fontSize: 14,
+              color: "#45635c",
+            },
+          }),
           Row({
-            spacing: 10,
-
+            style: {
+              gap: 12,
+              alignItems: "center",
+            },
             children: [
               Button({
-                text: "Click Me",
-                onClick: () => {
-                  console.log("clicked!");
+                text: "Styled Button",
+                style: {
+                  padding: 10,
+                  backgroundColor: "#147d72",
+                  color: "#ffffff",
+                  borderRadius: 6,
                 },
               }),
-
-              Button({
-                text: "Exit",
-                onClick: () => {
-                  console.log("Exit clicked!");
-                  Application.exit();
+              View({
+                style: {
+                  width: 170,
+                  height: 72,
+                  padding: 8,
+                  backgroundColor: "#ffffff",
+                  borderColor: "#9bbab0",
+                  borderWidth: 1,
+                  borderRadius: 6,
+                  justifyContent: "center",
+                  alignItems: "center",
                 },
+                children: [
+                  Text("Styled View", {
+                    style: {
+                      color: "#193b35",
+                      fontWeight: "bold",
+                    },
+                  }),
+                ],
               }),
             ],
           }),
