@@ -24,7 +24,6 @@ export interface LayoutProps {
 }
 
 export interface TextProps {
-  text: string;
   fontSize?: number;
   fontWeight?: "normal" | "bold";
   foregroundColor?: string;

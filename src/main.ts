@@ -12,15 +12,12 @@ function Main() {
         padding: 20,
 
         children: [
-          Text({
-            text: "Welcome to Julia Native",
+          Text("Welcome to Julia Native", {
             fontSize: 24,
             fontWeight: "bold",
           }),
 
-          Text({
-            text: "Native Desktop Framework",
-          }),
+          Text("Native Desktop Framework"),
 
           Row({
             spacing: 10,
