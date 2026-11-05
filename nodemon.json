@@ -1,7 +1,8 @@
 {
-  "watch": ["app", "src"],
-  "ext": "cpp,h,hpp,ts,js",
-  "ignore": ["app/build/**", "app/build", "app/*.exe", "node_modules/**"],
-  "exec": "npm run dev:restart",
-  "delay": "500"
+  "watch": ["src", "app/core"],
+  "ext": "ts",
+  "ignore": ["app/build/**", "app/build", "node_modules/**"],
+  "exec": "npm run dev:reload",
+  "delay": "500",
+  "runOnChangeOnly": true
 }

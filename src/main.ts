@@ -1,13 +1,13 @@
+import { Application } from "@julia/core";
 import {
-  Application,
+  View,
   Widget,
   Column,
   Row,
   Text,
   TextInput,
   Button,
-} from "@julia/core";
-import { View } from "@julia/core/components/View";
+} from "@julia/core/components";
 
 function Main() {
   return Widget({

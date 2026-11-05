@@ -578,9 +578,19 @@
 #include <QProcess>
 #include <QDir>
 #include <QFileInfo>
+#include <QFile>
+#include <QFileSystemWatcher>
+#include <QTimer>
 #include <QCoreApplication>
 #include <QSizePolicy>
 #include <QList>
+
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 // Mengelola komunikasi antara runtime C++ Qt dan aplikasi JavaScript Node.js.
 class JuliaRuntime : public QObject
@@ -594,6 +604,15 @@ public:
 
     // Menampung data output Node.js sebelum diproses per baris.
     QByteArray buffer;
+
+#ifdef Q_OS_WIN
+    HANDLE nodeJob = nullptr;
+#endif
+    QFileSystemWatcher *reloadWatcher = nullptr;
+    QTimer *reloadTimer = nullptr;
+    QString nodePath;
+    QString mainFile;
+    QString workingDir;
 
     // Constructor: menyiapkan window dan koneksi komunikasi Node.js.
     JuliaRuntime()
@@ -663,31 +682,38 @@ public:
     }
 
     // Menjalankan Node.js dan menentukan lokasi file JavaScript.
-    void start()
+    void start(bool developmentMode = false)
     {
         // Mengambil lokasi folder tempat executable JuliaNative berada.
         QString appDir =
             QCoreApplication::applicationDirPath();
 
         // Lokasi Node.js untuk versi portable.
-        QString nodePath =
+        nodePath =
             QDir(appDir).filePath("runtime/node/node.exe");
 
         // Lokasi file utama JavaScript untuk versi portable.
-        QString mainFile =
+        mainFile =
             QDir(appDir).filePath("runtime/app/src/main.js");
 
         // Folder kerja Node.js untuk versi portable.
-        QString workingDir =
+        workingDir =
             QDir(appDir).filePath("runtime/app");
 
+        QString projectDir;
+        if (developmentMode) {
+            projectDir = QDir::currentPath();
+        }
+
         // Jika file portable tidak ditemukan, gunakan struktur project development.
-        if (!QFileInfo::exists(nodePath) ||
+        if (developmentMode ||
+            !QFileInfo::exists(nodePath) ||
             !QFileInfo::exists(mainFile))
         {
             // Mengambil lokasi root project dari folder executable.
-            QString projectDir =
-                QDir(appDir).absoluteFilePath("../..");
+            if (projectDir.isEmpty()) {
+                projectDir = QDir(appDir).absoluteFilePath("../..");
+            }
 
             projectDir = QDir::cleanPath(projectDir);
 
@@ -720,6 +746,43 @@ public:
         // Menentukan direktori kerja proses Node.js.
         node->setWorkingDirectory(workingDir);
 
+        if (developmentMode) {
+            const QString reloadSignalPath =
+                QDir(projectDir).filePath("app/build/.dev-reload");
+            QFile reloadSignal(reloadSignalPath);
+            if (!reloadSignal.open(QIODevice::WriteOnly)) {
+                qWarning() << "Could not create development reload signal:"
+                           << reloadSignal.errorString();
+                window->close();
+                return;
+            }
+            reloadSignal.close();
+
+            reloadWatcher = new QFileSystemWatcher(this);
+            reloadTimer = new QTimer(this);
+            reloadTimer->setSingleShot(true);
+            connect(reloadWatcher, &QFileSystemWatcher::fileChanged,
+                this, [this, reloadSignalPath]() {
+                    if (QFileInfo::exists(reloadSignalPath) &&
+                        !reloadWatcher->files().contains(reloadSignalPath))
+                    {
+                        reloadWatcher->addPath(reloadSignalPath);
+                    }
+                    reloadTimer->start(150);
+                }
+            );
+            connect(reloadTimer, &QTimer::timeout,
+                this, [this]() { restartNode(); }
+            );
+
+            if (!reloadWatcher->addPath(reloadSignalPath)) {
+                qWarning() << "Could not watch development reload signal:"
+                           << reloadSignalPath;
+                window->close();
+                return;
+            }
+        }
+
         // Menampilkan window utama.
         window->show();
 
@@ -729,8 +792,88 @@ public:
         // Menunggu sampai proses Node.js berhasil dijalankan.
         if (!node->waitForStarted(5000)) {
             window->close();
+            return;
         }
+
+#ifdef Q_OS_WIN
+        nodeJob = CreateJobObjectW(nullptr, nullptr);
+        if (!nodeJob) {
+            qWarning() << "Could not create Node.js process job:"
+                       << GetLastError();
+            node->kill();
+            node->waitForFinished();
+            window->close();
+            return;
+        }
+
+        if (!attachNodeToJob()) {
+            node->kill();
+            node->waitForFinished();
+            window->close();
+        }
+#endif
     }
+
+    void restartNode()
+    {
+        if (node->state() != QProcess::NotRunning) {
+            node->kill();
+            node->waitForFinished();
+        }
+
+        buffer.clear();
+        node->setProgram(nodePath);
+        node->setArguments({mainFile});
+        node->setWorkingDirectory(workingDir);
+        node->start();
+
+        if (!node->waitForStarted(5000)) {
+            qWarning() << "Could not restart Node.js:" << node->errorString();
+            return;
+        }
+
+#ifdef Q_OS_WIN
+        if (!attachNodeToJob()) {
+            qWarning() << "Could not manage restarted Node.js process:"
+                       << GetLastError();
+            node->kill();
+            node->waitForFinished();
+        }
+#endif
+    }
+
+#ifdef Q_OS_WIN
+    bool attachNodeToJob()
+    {
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobInfo{};
+        jobInfo.BasicLimitInformation.LimitFlags =
+            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+        if (!SetInformationJobObject(
+                nodeJob,
+                JobObjectExtendedLimitInformation,
+                &jobInfo,
+                sizeof(jobInfo)
+            ))
+        {
+            return false;
+        }
+
+        HANDLE nodeProcess = OpenProcess(
+            PROCESS_SET_QUOTA | PROCESS_TERMINATE,
+            FALSE,
+            static_cast<DWORD>(node->processId())
+        );
+        if (!nodeProcess) {
+            return false;
+        }
+
+        const bool assigned =
+            AssignProcessToJobObject(nodeJob, nodeProcess);
+        CloseHandle(nodeProcess);
+        return assigned;
+    }
+#endif
 
     QWidget *createNode(const QJsonObject &data)
     {
@@ -1218,6 +1361,12 @@ public:
             node->waitForFinished();
         }
 
+#ifdef Q_OS_WIN
+        if (nodeJob) {
+            CloseHandle(nodeJob);
+        }
+#endif
+
         // Menghapus window utama.
         delete window;
     }
@@ -1233,7 +1382,7 @@ int main(int argc, char *argv[])
     JuliaRuntime runtime;
 
     // Menjalankan Node.js dan menampilkan window.
-    runtime.start();
+    runtime.start(app.arguments().contains("--dev"));
 
     // Menjalankan event loop Qt.
     return app.exec();

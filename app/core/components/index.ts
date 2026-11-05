@@ -4,3 +4,4 @@ export * from "./Row";
 export * from "./Text";
 export * from "./TextInput";
 export * from "./Widget";
+export * from "./View";
