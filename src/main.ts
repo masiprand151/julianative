@@ -1,4 +1,12 @@
-import { Application, Widget, Column, Row, Text, Button } from "@julia/core";
+import {
+  Application,
+  Widget,
+  Column,
+  Row,
+  Text,
+  TextInput,
+  Button,
+} from "@julia/core";
 import { View } from "@julia/core/components/View";
 
 function Main() {
@@ -34,6 +42,37 @@ function Main() {
             style: {
               fontSize: 14,
               color: "#45635c",
+            },
+          }),
+          TextInput({
+            type: "email",
+            placeholder: "Email",
+            style: {
+              padding: 8,
+              borderColor: "#9bbab0",
+              borderWidth: 1,
+              borderRadius: 6,
+            },
+          }),
+          TextInput({
+            type: "password",
+            placeholder: "Password",
+            style: {
+              padding: 8,
+              borderColor: "#9bbab0",
+              borderWidth: 1,
+              borderRadius: 6,
+            },
+          }),
+          TextInput({
+            type: "number",
+            placeholder: "Age",
+            onChange: (value) => console.log("Number:", value),
+            style: {
+              padding: 8,
+              borderColor: "#9bbab0",
+              borderWidth: 1,
+              borderRadius: 6,
             },
           }),
           Row({

@@ -3,6 +3,7 @@ export type ComponentType =
   | "Column"
   | "Row"
   | "Text"
+  | "TextInput"
   | "Button"
   | "View";
 
@@ -74,6 +75,16 @@ export interface TextProps {
 export interface ButtonProps {
   text: string;
   onClick?: () => void;
+  style?: StyleProps;
+}
+
+export type TextInputType = "text" | "password" | "number" | "email";
+
+export interface TextInputProps {
+  type?: TextInputType;
+  value?: string | number;
+  placeholder?: string;
+  onChange?: (value: string) => void;
   style?: StyleProps;
 }
 

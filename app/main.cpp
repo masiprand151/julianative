@@ -565,7 +565,9 @@
 #include <QApplication>
 #include <QWidget>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPushButton>
+#include <QDoubleValidator>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QBoxLayout>
@@ -748,6 +750,48 @@ public:
             );
 
             return label;
+        }
+
+        if (type == "TextInput") {
+            QLineEdit *input = new QLineEdit();
+            const QString inputType = props["type"].toString("text");
+
+            input->setText(props["value"].toVariant().toString());
+            input->setPlaceholderText(props["placeholder"].toString());
+
+            if (inputType == "password") {
+                input->setEchoMode(QLineEdit::Password);
+            } else if (inputType == "number") {
+                auto *validator = new QDoubleValidator(input);
+                validator->setNotation(QDoubleValidator::StandardNotation);
+                input->setValidator(validator);
+            } else if (inputType == "email") {
+                input->setInputMethodHints(
+                    Qt::ImhEmailCharactersOnly | Qt::ImhNoAutoUppercase
+                );
+            }
+
+            applyStyle(input, props["style"].toObject(), {}, true);
+
+            const QString eventId = events["change"].toString();
+            connect(input, &QLineEdit::textEdited,
+                this, [this, eventId](const QString &value) {
+                    if (eventId.isEmpty()) return;
+
+                    QJsonObject message;
+                    message["type"] = "change";
+                    message["id"] = eventId;
+                    message["value"] = value;
+
+                    const QByteArray data =
+                        QJsonDocument(message)
+                            .toJson(QJsonDocument::Compact);
+
+                    node->write(data + "\n");
+                }
+            );
+
+            return input;
         }
 
         if (type == "Button") {
