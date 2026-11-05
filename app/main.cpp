@@ -601,6 +601,7 @@ public:
 
     // Window utama aplikasi JuliaNative.
     QWidget *window;
+    QLineEdit *autoFocusInput = nullptr;
 
     // Menampung data output Node.js sebelum diproses per baris.
     QByteArray buffer;
@@ -898,6 +899,10 @@ public:
         if (type == "TextInput") {
             QLineEdit *input = new QLineEdit();
             const QString inputType = props["type"].toString("text");
+
+            if (props["autoFocus"].toBool()) {
+                autoFocusInput = input;
+            }
 
             input->setText(props["value"].toVariant().toString());
             input->setPlaceholderText(props["placeholder"].toString());
@@ -1323,6 +1328,7 @@ public:
         layout->setSpacing(style["gap"].toInt(0));
 
         // Menghapus seluruh widget dari tampilan sebelumnya.
+        autoFocusInput = nullptr;
         while (QLayoutItem *item = layout->takeAt(0)) {
             if (QWidget *widget = item->widget()) {
                 delete widget;
@@ -1350,6 +1356,9 @@ public:
 
         // Menampilkan window setelah UI selesai dibuat.
         window->show();
+        if (autoFocusInput) {
+            autoFocusInput->setFocus(Qt::OtherFocusReason);
+        }
     }
 
     // Destructor: menghentikan Node.js dan membersihkan window.

@@ -84,6 +84,7 @@ export interface TextInputProps {
   type?: TextInputType;
   value?: string | number;
   placeholder?: string;
+  autoFocus?: boolean;
   onChange?: (value: string) => void;
   style?: StyleProps;
 }

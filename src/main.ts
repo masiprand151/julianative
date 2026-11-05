@@ -79,6 +79,7 @@ function Main() {
             style: {
               gap: 12,
               alignItems: "center",
+              justifyContent: "center",
             },
             children: [
               Button({

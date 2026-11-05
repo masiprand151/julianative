@@ -18,12 +18,14 @@ Changes to native C++ files require a manual rebuild and app restart.
 ## TextInput
 
 `TextInput` supports `text`, `password`, `number`, and `email` input types.
-The optional `onChange` callback receives the current value as a string.
+Set `autoFocus: true` to focus the input when the UI opens or refreshes. The
+optional `onChange` callback receives the current value as a string.
 
 ```ts
 TextInput({
   type: "email",
   placeholder: "Email",
+  autoFocus: true,
   onChange: (value) => console.log(value),
 });
 ```
