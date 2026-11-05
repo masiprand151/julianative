@@ -7,7 +7,36 @@ import {
   Text,
   TextInput,
   Button,
+  StyleSheet,
 } from "@julia/core/components";
+
+const styles = StyleSheet.create({
+  primaryButton: {
+    padding: "10px",
+    backgroundColor: "#147d72",
+    color: "#ffffff",
+    borderRadius: "6px",
+    cursor: "pointer",
+    ":hover": {
+      backgroundColor: "#282b2a",
+    },
+    ":pressed": {
+      backgroundColor: "#0a4f48",
+    },
+  },
+  textInput: {
+    padding: "8px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #9bbab0",
+    borderRadius: "6px",
+    ":hover": {
+      borderColor: "#147d72",
+    },
+    ":focus": {
+      borderColor: "#0f655c",
+    },
+  },
+});
 
 function Main() {
   return Widget({
@@ -47,33 +76,18 @@ function Main() {
           TextInput({
             type: "email",
             placeholder: "Email",
-            style: {
-              padding: 8,
-              borderColor: "#9bbab0",
-              borderWidth: 1,
-              borderRadius: 6,
-            },
+            style: styles.textInput,
           }),
           TextInput({
             type: "password",
             placeholder: "Password",
-            style: {
-              padding: 8,
-              borderColor: "#9bbab0",
-              borderWidth: 1,
-              borderRadius: 6,
-            },
+            style: styles.textInput,
           }),
           TextInput({
             type: "number",
             placeholder: "Age",
             onChange: (value) => console.log("Number:", value),
-            style: {
-              padding: 8,
-              borderColor: "#9bbab0",
-              borderWidth: 1,
-              borderRadius: 6,
-            },
+            style: styles.textInput,
           }),
           Row({
             style: {
@@ -84,12 +98,7 @@ function Main() {
             children: [
               Button({
                 text: "Styled Button",
-                style: {
-                  padding: 10,
-                  backgroundColor: "#147d72",
-                  color: "#ffffff",
-                  borderRadius: 6,
-                },
+                style: styles.primaryButton,
               }),
               View({
                 style: {

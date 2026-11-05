@@ -584,6 +584,10 @@
 #include <QCoreApplication>
 #include <QSizePolicy>
 #include <QList>
+#include <QCursor>
+#include <QHash>
+#include <QEvent>
+#include <QSet>
 
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
@@ -602,6 +606,7 @@ public:
     // Window utama aplikasi JuliaNative.
     QWidget *window;
     QLineEdit *autoFocusInput = nullptr;
+    int styleObjectCounter = 0;
 
     // Menampung data output Node.js sebelum diproses per baris.
     QByteArray buffer;
@@ -622,6 +627,7 @@ public:
         window = new QWidget();
         // Memisahkan output stdout dan stderr Node.js.
         node->setProcessChannelMode(QProcess::SeparateChannels);
+        window->installEventFilter(this);
 
         // Pengaturan awal window.
         window->setWindowTitle("JuliaNative");
@@ -843,6 +849,293 @@ public:
 #endif
     }
 
+        bool eventFilter(QObject *watched, QEvent *event) override
+        {
+            if (event->type() == QEvent::Resize) {
+                if (QWidget *parent = qobject_cast<QWidget *>(watched)) {
+                    updatePercentSizedChildren(parent);
+                }
+            } else if (event->type() == QEvent::Enter ||
+                       event->type() == QEvent::Leave)
+            {
+                if (QWidget *widget = qobject_cast<QWidget *>(watched)) {
+                    const QVariant hoverCursor =
+                        widget->property("juliaHoverCursor");
+                    if (event->type() == QEvent::Enter && hoverCursor.isValid()) {
+                        widget->setCursor(
+                            QCursor(static_cast<Qt::CursorShape>(
+                                hoverCursor.toInt()
+                            ))
+                        );
+                    } else if (event->type() == QEvent::Leave) {
+                        const QVariant baseCursor =
+                            widget->property("juliaBaseCursor");
+                        if (baseCursor.isValid()) {
+                            widget->setCursor(
+                                QCursor(static_cast<Qt::CursorShape>(
+                                    baseCursor.toInt()
+                                ))
+                            );
+                        } else {
+                            widget->unsetCursor();
+                        }
+                    }
+                }
+            }
+
+            return QObject::eventFilter(watched, event);
+        }
+
+        void updatePercentSizedChildren(QWidget *parent)
+        {
+            const QRect available = parent->contentsRect();
+            const auto children = parent->findChildren<QWidget *>(
+                QString(),
+                Qt::FindDirectChildrenOnly
+            );
+
+            for (QWidget *child : children) {
+                const QVariant widthPercent =
+                    child->property("juliaWidthPercent");
+                const QVariant heightPercent =
+                    child->property("juliaHeightPercent");
+                const QVariant minWidthPercent =
+                    child->property("juliaMinWidthPercent");
+                const QVariant minHeightPercent =
+                    child->property("juliaMinHeightPercent");
+                const QVariant maxWidthPercent =
+                    child->property("juliaMaxWidthPercent");
+                const QVariant maxHeightPercent =
+                    child->property("juliaMaxHeightPercent");
+
+                if (widthPercent.isValid()) {
+                    child->setFixedWidth(
+                        qRound(available.width() * widthPercent.toDouble() / 100.0)
+                    );
+                }
+                if (heightPercent.isValid()) {
+                    child->setFixedHeight(
+                        qRound(available.height() * heightPercent.toDouble() / 100.0)
+                    );
+                }
+                if (minWidthPercent.isValid()) {
+                    child->setMinimumWidth(
+                        qRound(available.width() * minWidthPercent.toDouble() / 100.0)
+                    );
+                }
+                if (minHeightPercent.isValid()) {
+                    child->setMinimumHeight(
+                        qRound(available.height() * minHeightPercent.toDouble() / 100.0)
+                    );
+                }
+                if (maxWidthPercent.isValid()) {
+                    child->setMaximumWidth(
+                        qRound(available.width() * maxWidthPercent.toDouble() / 100.0)
+                    );
+                }
+                if (maxHeightPercent.isValid()) {
+                    child->setMaximumHeight(
+                        qRound(available.height() * maxHeightPercent.toDouble() / 100.0)
+                    );
+                }
+            }
+        }
+
+        bool cursorShapeFor(const QString &name, Qt::CursorShape *shape) const
+        {
+            static const QHash<QString, Qt::CursorShape> cursorShapes = {
+                {"default", Qt::ArrowCursor},
+                {"none", Qt::BlankCursor},
+                {"context-menu", Qt::ArrowCursor},
+                {"help", Qt::WhatsThisCursor},
+                {"pointer", Qt::PointingHandCursor},
+                {"progress", Qt::BusyCursor},
+                {"wait", Qt::WaitCursor},
+                {"cell", Qt::CrossCursor},
+                {"crosshair", Qt::CrossCursor},
+                {"text", Qt::IBeamCursor},
+                {"vertical-text", Qt::IBeamCursor},
+                {"alias", Qt::DragLinkCursor},
+                {"copy", Qt::DragCopyCursor},
+                {"move", Qt::SizeAllCursor},
+                {"no-drop", Qt::ForbiddenCursor},
+                {"not-allowed", Qt::ForbiddenCursor},
+                {"grab", Qt::OpenHandCursor},
+                {"grabbing", Qt::ClosedHandCursor},
+                {"all-scroll", Qt::SizeAllCursor},
+                {"col-resize", Qt::SizeHorCursor},
+                {"row-resize", Qt::SizeVerCursor},
+                {"e-resize", Qt::SizeHorCursor},
+                {"w-resize", Qt::SizeHorCursor},
+                {"ew-resize", Qt::SizeHorCursor},
+                {"n-resize", Qt::SizeVerCursor},
+                {"s-resize", Qt::SizeVerCursor},
+                {"ns-resize", Qt::SizeVerCursor},
+                {"ne-resize", Qt::SizeBDiagCursor},
+                {"sw-resize", Qt::SizeBDiagCursor},
+                {"nw-resize", Qt::SizeFDiagCursor},
+                {"se-resize", Qt::SizeFDiagCursor},
+                {"nesw-resize", Qt::SizeBDiagCursor},
+                {"nwse-resize", Qt::SizeFDiagCursor},
+                {"zoom-in", Qt::PointingHandCursor},
+                {"zoom-out", Qt::PointingHandCursor}
+            };
+            if (!cursorShapes.contains(name)) return false;
+            *shape = cursorShapes.value(name);
+            return true;
+        }
+
+        QString cssPropertyName(const QString &name) const
+        {
+            if (name == "foregroundColor") return "color";
+
+            QString result;
+            for (const QChar character : name) {
+                if (character.isUpper()) {
+                    result += '-';
+                    result += character.toLower();
+                } else {
+                    result += character;
+                }
+            }
+            return result;
+        }
+
+        QString cssValue(const QString &property, const QJsonValue &value) const
+        {
+            if (value.isString()) {
+                return value.toString();
+            }
+            if (!value.isDouble()) {
+                return {};
+            }
+
+            const QString number = QString::number(value.toDouble());
+            static const QSet<QString> lengthProperties = {
+                "width", "height", "min-width", "min-height", "max-width",
+                "max-height", "margin", "margin-left", "margin-right",
+                "margin-top", "margin-bottom", "padding", "padding-left",
+                "padding-right", "padding-top", "padding-bottom", "border-width",
+                "border-radius", "font-size", "letter-spacing"
+            };
+            return lengthProperties.contains(property) ? number + "px" : number;
+        }
+
+        QString cssDeclarations(
+            const QJsonObject &style,
+            bool includePadding,
+            bool includeGeometry
+        ) const
+        {
+            static const QSet<QString> supportedProperties = {
+                "background", "background-color", "color", "border",
+                "border-color", "border-width", "border-style", "border-radius",
+                "border-top-left-radius", "border-top-right-radius",
+                "border-bottom-left-radius", "border-bottom-right-radius",
+                "font", "font-family", "font-size", "font-weight", "font-style",
+                "text-align", "padding", "padding-left", "padding-right",
+                "padding-top", "padding-bottom", "margin", "margin-left",
+                "margin-right", "margin-top", "margin-bottom", "width", "height",
+                "min-width", "min-height", "max-width", "max-height",
+                "letter-spacing", "selection-color", "selection-background-color"
+            };
+            QStringList declarations;
+
+            for (auto it = style.begin(); it != style.end(); ++it) {
+                const QString key = it.key();
+                if (key.startsWith(':') || key == "cursor" || key == "flex" ||
+                    key == "gap" || key == "flexDirection" ||
+                    key == "justifyContent" || key == "alignItems")
+                {
+                    continue;
+                }
+
+                const QString property = cssPropertyName(key);
+                if (!supportedProperties.contains(property)) continue;
+                if (!includePadding && property.startsWith("padding")) continue;
+                const bool isGeometry =
+                    property == "width" || property == "height" ||
+                    property.startsWith("min-") || property.startsWith("max-");
+                if (!includeGeometry &&
+                    isGeometry)
+                {
+                    continue;
+                }
+                if (isGeometry && it.value().isString() &&
+                    it.value().toString().trimmed().endsWith('%'))
+                {
+                    continue;
+                }
+
+                const QString value = cssValue(property, it.value());
+                if (!value.isEmpty()) {
+                    declarations.append(
+                        QString("%1: %2;").arg(property, value)
+                    );
+                }
+            }
+
+            if (style.contains("borderWidth") || style.contains("border-width")) {
+                const QString width = cssValue(
+                    "border-width",
+                    style.contains("borderWidth")
+                        ? style["borderWidth"]
+                        : style["border-width"]
+                );
+                const QString borderStyle = style["borderStyle"].toString(
+                    style["border-style"].toString("solid")
+                );
+                const QString borderColor = style["borderColor"].toString(
+                    style["border-color"].toString("#000000")
+                );
+                if (!width.isEmpty()) {
+                    declarations.append(
+                        QString("border: %1 %2 %3;")
+                            .arg(width, borderStyle, borderColor)
+                    );
+                }
+            }
+
+            return declarations.join('\n');
+        }
+
+        QString styleSheetFor(QWidget *widget, const QJsonObject &style,
+                              bool includePadding)
+        {
+            const QString base = cssDeclarations(style, includePadding, true);
+            const QString className = QString("juliaStyle%1")
+                .arg(++styleObjectCounter);
+            QString result = QString("#%1 { %2 }\n").arg(className, base);
+            bool hasPseudoStyle = false;
+
+            for (auto it = style.begin(); it != style.end(); ++it) {
+                if (!it.key().startsWith(':') || !it.value().isObject()) continue;
+                const QString state = it.key().mid(1);
+                static const QSet<QString> supportedStates = {
+                    "hover", "focus", "active", "pressed", "disabled"
+                };
+                if (!supportedStates.contains(state)) continue;
+
+                const QString declarations = cssDeclarations(
+                    it.value().toObject(),
+                    includePadding,
+                    true
+                );
+                if (declarations.isEmpty()) continue;
+                const QString qtState = state == "active" ? "pressed" : state;
+                result += QString("#%1:%2 { %3 }\n")
+                    .arg(className, qtState, declarations);
+                hasPseudoStyle = true;
+            }
+
+            if (!hasPseudoStyle) {
+                return base;
+            }
+
+            widget->setObjectName(className);
+            return result;
+        }
+
 #ifdef Q_OS_WIN
     bool attachNodeToJob()
     {
@@ -949,6 +1242,7 @@ public:
 
             applyStyle(button, props["style"].toObject(), {}, true);
 
+
             QString eventId = events["click"].toString();
 
             connect(button, &QPushButton::clicked,
@@ -1032,8 +1326,14 @@ public:
             layout = new QVBoxLayout(container);
         }
 
-        int padding = props["padding"].toInt(style["padding"].toInt(0));
-        int spacing = props["spacing"].toInt(style["gap"].toInt(0));
+        int padding = styleLengthPixels(
+            props["padding"],
+            styleLengthPixels(styleValue(style, "padding", "padding"), 0)
+        );
+        int spacing = styleLengthPixels(
+            props["spacing"],
+            styleLengthPixels(styleValue(style, "gap", "gap"), 0)
+        );
 
         QString justify = props["justifyContent"].toString(
             style["justifyContent"].toString("flex-start")
@@ -1047,6 +1347,7 @@ public:
         if (align == "flex-start") align = "start";
         if (align == "flex-end") align = "end";
 
+        container->installEventFilter(this);
         layout->setContentsMargins(
             padding, padding, padding, padding
         );
@@ -1070,13 +1371,17 @@ public:
             QJsonObject childProps = childData["props"].toObject();
             QJsonObject childStyle = childProps["style"].toObject();
             int flex = qMax(0, childProps["flex"].toInt(childStyle["flex"].toInt(0)));
-            int margin = childStyle["margin"].toInt(0);
+            int margin = styleLengthPixels(
+                styleValue(childStyle, "margin", "margin"),
+                0
+            );
             const bool fixedWidth = widget->minimumWidth() == widget->maximumWidth();
             const bool fixedHeight = widget->minimumHeight() == widget->maximumHeight();
 
             QWidget *layoutWidget = widget;
             if (margin > 0) {
                 layoutWidget = new QWidget();
+                layoutWidget->installEventFilter(this);
                 QBoxLayout *marginLayout = new QBoxLayout(
                     isRow ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom,
                     layoutWidget
@@ -1084,6 +1389,7 @@ public:
                 marginLayout->setContentsMargins(margin, margin, margin, margin);
                 marginLayout->setSpacing(0);
                 marginLayout->addWidget(widget);
+                updatePercentSizedChildren(layoutWidget);
             }
 
             QSizePolicy policy = layoutWidget->sizePolicy();
@@ -1170,7 +1476,89 @@ public:
             layout->addStretch(1);
         }
 
+        updatePercentSizedChildren(container);
         return container;
+    }
+
+    int styleLengthPixels(const QJsonValue &value, int fallback = -1) const
+    {
+        if (value.isDouble()) return value.toInt();
+        if (!value.isString()) return fallback;
+
+        QString text = value.toString().trimmed();
+        double scale = 1.0;
+        if (text.endsWith("px")) {
+            text.chop(2);
+        } else if (text.endsWith("pt")) {
+            text.chop(2);
+            scale = 96.0 / 72.0;
+        } else {
+            return fallback;
+        }
+
+        bool ok = false;
+        const double amount = text.toDouble(&ok);
+        return ok ? qRound(amount * scale) : fallback;
+    }
+
+    QJsonValue styleValue(
+        const QJsonObject &style,
+        const QString &camelName,
+        const QString &cssName
+    ) const {
+        return style.contains(camelName) ? style[camelName] : style[cssName];
+    }
+
+    void setStyledDimension(
+        QWidget *widget,
+        const QJsonObject &style,
+        const QString &property,
+        bool minimum,
+        bool maximum
+    ) {
+        QString cssName;
+        for (const QChar character : property) {
+            if (character.isUpper()) {
+                cssName += '-';
+                cssName += character.toLower();
+            } else {
+                cssName += character;
+            }
+        }
+        const QJsonValue value = styleValue(style, property, cssName);
+        if (value.isString() && value.toString().trimmed().endsWith('%')) {
+            QString amount = value.toString().trimmed();
+            amount.chop(1);
+            bool ok = false;
+            const double percent = amount.toDouble(&ok);
+            if (ok && percent >= 0.0) {
+                const bool isWidth =
+                    property.endsWith("Width") || property == "width";
+                const QString dimension = isWidth ? "Width" : "Height";
+                const QString constraint = minimum
+                    ? "Min"
+                    : maximum ? "Max" : "";
+                const QString percentProperty =
+                    "julia" + constraint + dimension + "Percent";
+                widget->setProperty(percentProperty.toUtf8().constData(), percent);
+            }
+            return;
+        }
+
+        const int pixels = styleLengthPixels(value);
+        if (pixels < 0) return;
+        const bool isWidth = property.endsWith("Width") || property == "width";
+        if (minimum) {
+            if (isWidth) widget->setMinimumWidth(pixels);
+            else widget->setMinimumHeight(pixels);
+        } else if (maximum) {
+            if (isWidth) widget->setMaximumWidth(pixels);
+            else widget->setMaximumHeight(pixels);
+        } else if (isWidth) {
+            widget->setFixedWidth(pixels);
+        } else {
+            widget->setFixedHeight(pixels);
+        }
     }
 
     void applyStyle(
@@ -1179,63 +1567,56 @@ public:
         const QJsonObject &fallbackProps = QJsonObject(),
         bool includePadding = false
     ) {
-        const int minWidth = style["minWidth"].toInt(-1);
-        const int minHeight = style["minHeight"].toInt(-1);
-        const int maxWidth = style["maxWidth"].toInt(-1);
-        const int maxHeight = style["maxHeight"].toInt(-1);
-        const int width = style["width"].toInt(-1);
-        const int height = style["height"].toInt(-1);
+        const QString cursor = style["cursor"].toString();
+        Qt::CursorShape baseCursor;
+        if (cursor == "auto") {
+            widget->unsetCursor();
+            widget->setProperty("juliaBaseCursor", QVariant());
+        } else if (cursorShapeFor(cursor, &baseCursor)) {
+            widget->setCursor(QCursor(baseCursor));
+            widget->setProperty("juliaBaseCursor", static_cast<int>(baseCursor));
+        }
 
-        if (minWidth >= 0) widget->setMinimumWidth(minWidth);
-        if (minHeight >= 0) widget->setMinimumHeight(minHeight);
-        if (maxWidth >= 0) widget->setMaximumWidth(maxWidth);
-        if (maxHeight >= 0) widget->setMaximumHeight(maxHeight);
-        if (width >= 0) widget->setFixedWidth(width);
-        if (height >= 0) widget->setFixedHeight(height);
+        const QJsonObject hoverStyle = style[":hover"].toObject();
+        Qt::CursorShape hoverCursor;
+        const QString hoverCursorName = hoverStyle["cursor"].toString();
+        if (cursorShapeFor(hoverCursorName, &hoverCursor)) {
+            widget->setProperty("juliaHoverCursor", static_cast<int>(hoverCursor));
+            widget->installEventFilter(this);
+        } else {
+            widget->setProperty("juliaHoverCursor", QVariant());
+        }
 
-        QString styleSheet = widget->styleSheet();
-        const QString backgroundColor = style["backgroundColor"].toString();
-        const QString color = style["color"].toString(
-            fallbackProps["foregroundColor"].toString()
-        );
-        const int borderWidth = style["borderWidth"].toInt(0);
-        const int borderRadius = style["borderRadius"].toInt(0);
-        const int fontSize = style["fontSize"].toInt(
-            fallbackProps["fontSize"].toInt(-1)
-        );
-        const QString fontWeight = style["fontWeight"].toString(
-            fallbackProps["fontWeight"].toString()
-        );
-        const QString textAlign = style["textAlign"].toString();
-        const int padding = style["padding"].toInt(-1);
+        setStyledDimension(widget, style, "minWidth", true, false);
+        setStyledDimension(widget, style, "minHeight", true, false);
+        setStyledDimension(widget, style, "maxWidth", false, true);
+        setStyledDimension(widget, style, "maxHeight", false, true);
+        setStyledDimension(widget, style, "width", false, false);
+        setStyledDimension(widget, style, "height", false, false);
 
-        if (!backgroundColor.isEmpty()) {
-            styleSheet += QString("background-color: %1;").arg(backgroundColor);
+        QJsonObject effectiveStyle = style;
+        if (!effectiveStyle.contains("color") &&
+            fallbackProps.contains("foregroundColor"))
+        {
+            effectiveStyle["color"] = fallbackProps["foregroundColor"];
         }
-        if (!color.isEmpty()) {
-            styleSheet += QString("color: %1;").arg(color);
+        if (!effectiveStyle.contains("fontSize") &&
+            fallbackProps.contains("fontSize"))
+        {
+            effectiveStyle["fontSize"] = fallbackProps["fontSize"];
         }
-        if (borderWidth > 0) {
-            styleSheet += QString("border: %1px solid %2;")
-                .arg(borderWidth)
-                .arg(style["borderColor"].toString("#000000"));
+        if (!effectiveStyle.contains("fontWeight") &&
+            fallbackProps.contains("fontWeight"))
+        {
+            effectiveStyle["fontWeight"] = fallbackProps["fontWeight"];
         }
-        if (borderRadius > 0) {
-            styleSheet += QString("border-radius: %1px;").arg(borderRadius);
-        }
-        if (fontSize >= 0) {
-            styleSheet += QString("font-size: %1px;").arg(fontSize);
-        }
-        if (!fontWeight.isEmpty()) {
-            styleSheet += QString("font-weight: %1;").arg(fontWeight);
-        }
-        if (!textAlign.isEmpty()) {
-            styleSheet += QString("text-align: %1;").arg(textAlign);
-        }
-        if (includePadding && padding >= 0) {
-            styleSheet += QString("padding: %1px;").arg(padding);
-        }
-        if (!styleSheet.isEmpty()) {
+
+        const QString styleSheet = styleSheetFor(
+            widget,
+            effectiveStyle,
+            includePadding
+        );
+        if (!styleSheet.trimmed().isEmpty()) {
             widget->setAttribute(Qt::WA_StyledBackground, true);
             widget->setStyleSheet(styleSheet);
         }
@@ -1355,6 +1736,7 @@ public:
         }
 
         // Menampilkan window setelah UI selesai dibuat.
+        updatePercentSizedChildren(window);
         window->show();
         if (autoFocusInput) {
             autoFocusInput->setFocus(Qt::OtherFocusReason);

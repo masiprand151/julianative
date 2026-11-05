@@ -15,6 +15,29 @@ to TypeScript files under `src` or `app/core` rebuild the UI and restart only
 the Node.js renderer; the native window stays open and refreshes in place.
 Changes to native C++ files require a manual rebuild and app restart.
 
+## StyleSheet
+
+Use `StyleSheet.create` to define and reuse component styles. Style properties
+can use camelCase or common CSS kebab-case names. Qt-supported CSS lengths
+include numbers, `px`, `pt`, `em`, and `ex`; width and height also accept
+percentages. The native renderer supports `:hover`, `:focus`, `:active`,
+`:pressed`, and `:disabled` states; CSS properties are limited to those
+supported by Qt stylesheets.
+
+```ts
+const styles = StyleSheet.create({
+  button: {
+    padding: "10px",
+    "background-color": "#147d72",
+    ":hover": {
+      backgroundColor: "#0f655c",
+    },
+  },
+});
+
+Button({ text: "Click me", style: styles.button });
+```
+
 ## TextInput
 
 `TextInput` supports `text`, `password`, `number`, and `email` input types.
@@ -27,5 +50,15 @@ TextInput({
   placeholder: "Email",
   autoFocus: true,
   onChange: (value) => console.log(value),
+});
+```
+
+Use `style.cursor` to choose a CSS-style mouse cursor, for example
+`"pointer"`, `"text"`, `"wait"`, or `"not-allowed"`.
+
+```ts
+Button({
+  text: "Click me",
+  style: { cursor: "pointer" },
 });
 ```

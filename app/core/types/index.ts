@@ -27,25 +27,85 @@ export interface WidgetProps {
 }
 
 export interface StyleProps {
-  width?: number;
-  height?: number;
-  minWidth?: number;
-  minHeight?: number;
-  maxWidth?: number;
-  maxHeight?: number;
-  margin?: number;
-  padding?: number;
-  gap?: number;
+  width?: CSSLength;
+  height?: CSSLength;
+  minWidth?: CSSLength;
+  minHeight?: CSSLength;
+  maxWidth?: CSSLength;
+  maxHeight?: CSSLength;
+  margin?: CSSLength;
+  padding?: CSSLength;
+  gap?: CSSLength;
   backgroundColor?: string;
+  background?: string;
   color?: string;
+  border?: string;
   borderColor?: string;
-  borderWidth?: number;
-  borderRadius?: number;
-  fontSize?: number;
+  borderWidth?: CSSLength;
+  borderRadius?: CSSLength;
+  fontSize?: CSSLength;
   fontWeight?: "normal" | "bold";
   textAlign?: "left" | "center" | "right";
+  cursor?: CursorType;
   flex?: number;
+  fontFamily?: string;
+  fontStyle?: "normal" | "italic";
+  letterSpacing?: CSSLength;
+  selectionColor?: string;
+  selectionBackgroundColor?: string;
+  ":hover"?: StyleProps;
+  ":focus"?: StyleProps;
+  ":active"?: StyleProps;
+  ":pressed"?: StyleProps;
+  ":disabled"?: StyleProps;
+  [cssProperty: `${string}-${string}`]: string | number | undefined;
 }
+
+export type CSSLength =
+  | number
+  | `${number}px`
+  | `${number}pt`
+  | `${number}em`
+  | `${number}ex`
+  | `${number}%`;
+
+export type CursorType =
+  | "auto"
+  | "default"
+  | "none"
+  | "context-menu"
+  | "help"
+  | "pointer"
+  | "progress"
+  | "wait"
+  | "cell"
+  | "crosshair"
+  | "text"
+  | "vertical-text"
+  | "alias"
+  | "copy"
+  | "move"
+  | "no-drop"
+  | "not-allowed"
+  | "grab"
+  | "grabbing"
+  | "all-scroll"
+  | "col-resize"
+  | "row-resize"
+  | "n-resize"
+  | "e-resize"
+  | "s-resize"
+  | "w-resize"
+  | "ne-resize"
+  | "nw-resize"
+  | "se-resize"
+  | "sw-resize"
+  | "ew-resize"
+  | "ns-resize"
+  | "nesw-resize"
+  | "nwse-resize"
+  | "zoom-in"
+  | "zoom-out";
 
 export interface LayoutProps {
   spacing?: number;
