@@ -1704,7 +1704,19 @@ public:
 
         }
 
-        const int padding = style["padding"].toInt(0);
+       int focusedInputIndex = -1;
+       int focusedCursorPosition = -1;
+       if (auto *focusedInput = qobject_cast<QLineEdit *>(
+               QApplication::focusWidget()
+           ))
+       {
+           const QList<QLineEdit *> previousInputs =
+               window->findChildren<QLineEdit *>();
+           focusedInputIndex = previousInputs.indexOf(focusedInput);
+           focusedCursorPosition = focusedInput->cursorPosition();
+       }
+
+       const int padding = style["padding"].toInt(0);
         layout->setContentsMargins(padding, padding, padding, padding);
         layout->setSpacing(style["gap"].toInt(0));
 
@@ -1738,7 +1750,19 @@ public:
         // Menampilkan window setelah UI selesai dibuat.
         updatePercentSizedChildren(window);
         window->show();
-        if (autoFocusInput) {
+        const QList<QLineEdit *> currentInputs =
+            window->findChildren<QLineEdit *>();
+        if (focusedInputIndex >= 0 &&
+            focusedInputIndex < currentInputs.size())
+        {
+            QLineEdit *focusedInput = currentInputs[focusedInputIndex];
+            focusedInput->setFocus(Qt::OtherFocusReason);
+            if (focusedCursorPosition >= 0) {
+                focusedInput->setCursorPosition(
+                    qMin(focusedCursorPosition, focusedInput->text().size())
+                );
+            }
+        } else if (autoFocusInput) {
             autoFocusInput->setFocus(Qt::OtherFocusReason);
         }
     }

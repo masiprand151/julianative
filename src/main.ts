@@ -1,4 +1,4 @@
-import { Application } from "@julia/core";
+import { Application, useState } from "@julia/core";
 import {
   View,
   Widget,
@@ -39,6 +39,9 @@ const styles = StyleSheet.create({
 });
 
 function Main() {
+  const [count, setCount] = useState(0);
+  const [email, setEmail] = useState("");
+
   return Widget({
     title: "Style Test",
     width: 1024,
@@ -73,11 +76,20 @@ function Main() {
               color: "#45635c",
             },
           }),
+          Text(`Count: ${count}`),
+          Button({
+            text: "Increment",
+            onClick: () => setCount((currentCount) => currentCount + 1),
+            style: styles.primaryButton,
+          }),
           TextInput({
             type: "email",
             placeholder: "Email",
+            value: email,
+            onChange: setEmail,
             style: styles.textInput,
           }),
+          Text(`Email: ${email}`),
           TextInput({
             type: "password",
             placeholder: "Password",

@@ -1,5 +1,13 @@
 import { VNode } from "./types";
 import { render, listenNativeEvents } from "./renderer";
+import {
+  abortStateRender,
+  beginStateRender,
+  finishStateRender,
+  setStateRenderCallback,
+} from "./state";
+import { clearButtonCallbacks } from "./components/Button";
+import { clearTextInputCallbacks } from "./components/TextInput";
 
 // Mengatur ulang console.log untuk mengirim pesan ke stderr.
 function setupConsole(): void {
@@ -26,8 +34,21 @@ export class Application {
 
     listenNativeEvents();
 
-    const root = main();
+    const renderApp = () => {
+      beginStateRender();
+      clearButtonCallbacks();
+      clearTextInputCallbacks();
 
-    render(root);
+      try {
+        render(main());
+        finishStateRender();
+      } catch (error) {
+        abortStateRender();
+        throw error;
+      }
+    };
+
+    setStateRenderCallback(renderApp);
+    renderApp();
   }
 }

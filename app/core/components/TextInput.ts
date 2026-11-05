@@ -4,6 +4,10 @@ let eventCounter = 0;
 
 const changeCallbacks = new Map<string, (value: string) => void>();
 
+export function clearTextInputCallbacks(): void {
+  changeCallbacks.clear();
+}
+
 export function TextInput(props: TextInputProps = {}): VNode {
   const eventId = `input_${++eventCounter}`;
 

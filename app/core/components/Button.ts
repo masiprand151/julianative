@@ -4,6 +4,10 @@ let eventCounter = 0;
 
 const eventCallbacks = new Map<string, () => void>();
 
+export function clearButtonCallbacks(): void {
+  eventCallbacks.clear();
+}
+
 // Membuat VNode untuk Button dengan event click.
 export function Button(props: ButtonProps): VNode {
   const eventId = `event_${++eventCounter}`;

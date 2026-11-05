@@ -6,3 +6,4 @@ export * from "./TextInput";
 export * from "./Widget";
 export * from "./View";
 export * from "../StyleSheet";
+export * from "../state";

@@ -15,6 +15,28 @@ to TypeScript files under `src` or `app/core` rebuild the UI and restart only
 the Node.js renderer; the native window stays open and refreshes in place.
 Changes to native C++ files require a manual rebuild and app restart.
 
+## State
+
+Use `useState` inside the root component to keep values between renders. Calling
+the setter re-renders the UI in the existing native window. State hooks must be
+called in the same order on every render.
+
+```ts
+function Main() {
+  const [count, setCount] = useState(0);
+
+  return Column({
+    children: [
+      Text(`Count: ${count}`),
+      Button({
+        text: "Increment",
+        onClick: () => setCount((current) => current + 1),
+      }),
+    ],
+  });
+}
+```
+
 ## StyleSheet
 
 Use `StyleSheet.create` to define and reuse component styles. Style properties
