@@ -2,7 +2,9 @@ declare const process: any;
 
 import { VNode } from "./types";
 import { dispatchEvent } from "./components/Button";
+import { dispatchModalClose } from "./components/Modal";
 import { dispatchChange } from "./components/TextInput";
+import { dispatchTableResize, dispatchTableSort } from "./components/Table";
 import { dispatchWidgetEvent } from "./components/Widget";
 
 // Mengubah VNode menjadi JSON untuk dikirim ke C++.
@@ -47,6 +49,20 @@ export function listenNativeEvents(): void {
           dispatchEvent(message.id);
         } else if (message.type === "change") {
           dispatchChange(message.id, message.value);
+        } else if (message.type === "modalClose") {
+          dispatchModalClose(message.id);
+        } else if (message.type === "tableSort") {
+          dispatchTableSort(
+            message.id,
+            message.columnIndex,
+            message.ascending,
+          );
+        } else if (message.type === "tableResize") {
+          dispatchTableResize(
+            message.id,
+            message.columnIndex,
+            message.width,
+          );
         } else if (message.type === "windowEvent") {
           try {
             if (message.event === "resize") {

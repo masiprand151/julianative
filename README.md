@@ -83,6 +83,64 @@ const styles = StyleSheet.create({
 Button({ text: "Click me", style: styles.button });
 ```
 
+`View` can scroll its contents when given a bounded size:
+
+```ts
+View({
+  scrollable: true,
+  scrollDirection: "vertical",
+  style: { width: 320, height: 240 },
+  children: [/* content */],
+});
+```
+
+## FlatList
+
+`FlatList` renders data with `renderItem`, supports horizontal or vertical
+scrolling, separators, an empty-state component, and separate container styles.
+The current native renderer creates every item (it does not virtualize large
+lists).
+
+```ts
+FlatList({
+  data: ["Ada", "Grace", "Linus"],
+  renderItem: ({ item, index }) => Text(`${index + 1}. ${item}`),
+  ItemSeparatorComponent: () => View({ style: { height: 1, backgroundColor: "#ddd" } }),
+  style: { height: 220 },
+  contentContainerStyle: { gap: 8, padding: 12 },
+});
+```
+
+`keyExtractor` is not currently supported because the renderer rebuilds the
+entire native view tree on each state update; stable keys have no reconciliation
+behavior yet.
+
+## Table
+
+`Table` uses the native Qt table widget, so its header, row selection, grid,
+sorting indicator, and column resizing follow the current desktop platform
+style. Drag a header divider to resize any column. The rightmost column fills
+any remaining width as the table or window grows. A horizontal scrollbar
+appears when the other columns or their minimums exceed the viewport. Specify
+`width` for an initial width and `minWidth` for the minimum. Data rows have a
+subtle tinted background and contrasting text by default; set `rowStyle` to
+customize it. `compare` enables custom sorting. All rows are currently rendered
+at once.
+
+```ts
+Table({
+  data: [
+    { name: "Ada", year: 1843 },
+    { name: "Grace", year: 1952 },
+  ],
+  columns: [
+    { key: "name", title: "Name" },
+    { key: "year", title: "Year", width: 90 },
+  ],
+  style: { height: 240 },
+});
+```
+
 ## TextInput
 
 `TextInput` supports `text`, `password`, `number`, and `email` input types.
@@ -95,6 +153,42 @@ TextInput({
   placeholder: "Email",
   autoFocus: true,
   onChange: (value) => console.log(value),
+});
+```
+
+## Card
+
+Use `Card` to group content with a title and a styled container. You can
+override its default container styles with `style`.
+
+```ts
+Card({
+  title: "Profile",
+  style: { padding: 20 },
+  children: [
+    Text("Manage your account details"),
+    Button({ text: "Edit profile" }),
+  ],
+});
+```
+
+## Modal
+
+Use `Modal` for a native modal dialog. Control its visibility with state; closing
+the dialog with its close button invokes `onClose`.
+
+```ts
+const [visible, setVisible] = useState(false);
+
+Button({ text: "Open", onClick: () => setVisible(true) });
+Modal({
+  visible,
+  title: "Confirmation",
+  onClose: () => setVisible(false),
+  children: [
+    Text("Continue?"),
+    Button({ text: "Close", onClick: () => setVisible(false) }),
+  ],
 });
 ```
 

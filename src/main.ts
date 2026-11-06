@@ -7,6 +7,10 @@ import {
   Text,
   TextInput,
   Button,
+  Card,
+  FlatList,
+  Modal,
+  Table,
   StyleSheet,
 } from "@julia/core/components";
 
@@ -41,6 +45,7 @@ const styles = StyleSheet.create({
 function Main() {
   const [count, setCount] = useState(0);
   const [email, setEmail] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
 
   return Widget({
     title: "Style Test",
@@ -48,7 +53,7 @@ function Main() {
     height: 768,
     position: { x: 0, y: 0 },
     fullscreen: false,
-    resizable: false,
+    resizable: true,
     hideTitleBar: false,
     alwaysOnTop: false,
     onClose: () => console.log("Window closed"),
@@ -85,6 +90,128 @@ function Main() {
               fontSize: 14,
               color: "#45635c",
             },
+          }),
+          Card({
+            title: "Contoh Card",
+            children: [
+              Text("Card dapat menampung komponen lain."),
+              Button({
+                text: "Aksi Card",
+                style: styles.primaryButton,
+              }),
+            ],
+          }),
+          Text("Contoh View Scrollable", {
+            style: { fontWeight: "bold", color: "#193b35" },
+          }),
+          View({
+            scrollable: true,
+            scrollDirection: "vertical",
+            style: {
+              height: 180,
+              padding: 12,
+              gap: 8,
+              backgroundColor: "#ffffff",
+              borderColor: "#9bbab0",
+              borderWidth: 1,
+              borderRadius: 6,
+            },
+            children: [
+              Text("Konten ini berada di dalam View dengan scroll vertikal."),
+              Text("Item 1"),
+              Text("Item 2"),
+              Text("Item 3"),
+              Text("Item 4"),
+              Text("Item 5"),
+              Text("Item 6"),
+              Text("Item 7"),
+              Text("Item 8"),
+            ],
+          }),
+          FlatList({
+            data: [
+              "Ada Lovelace",
+              "Grace Hopper",
+              "Katherine Johnson",
+              "Margaret Hamilton",
+            ],
+            renderItem: ({ item, index }) =>
+              Text(`${index + 1}. ${item}`, {
+                style: { color: "#193b35" },
+              }),
+            ItemSeparatorComponent: () =>
+              View({
+                style: {
+                  height: 1,
+                  backgroundColor: "#d5e0dc",
+                },
+              }),
+            style: {
+              height: 150,
+              backgroundColor: "#ffffff",
+              borderColor: "#9bbab0",
+              borderWidth: 1,
+              borderRadius: 6,
+            },
+            contentContainerStyle: {
+              gap: 8,
+              padding: 12,
+            },
+          }),
+          Table({
+            data: [
+              { name: "Ada Lovelace", role: "Mathematician", year: 1843 },
+              { name: "Grace Hopper", role: "Computer scientist", year: 1952 },
+              { name: "Katherine Johnson", role: "Mathematician", year: 1953 },
+              {
+                name: "Margaret Hamilton",
+                role: "Software engineer",
+                year: 1961,
+              },
+            ],
+            columns: [
+              { key: "name", title: "Name" },
+              { key: "role", title: "Role" },
+              { key: "year", title: "Year" },
+            ],
+            style: {
+              height: 240,
+              backgroundColor: "#ffffff",
+              borderColor: "#9bbab0",
+              borderWidth: 1,
+              borderRadius: 6,
+            },
+            headerStyle: {
+              backgroundColor: "#dce9e5",
+            },
+            headerTextStyle: {
+              color: "#193b35",
+            },
+          }),
+          Button({
+            text: "Buka Modal",
+            onClick: () => setModalVisible(true),
+            style: styles.primaryButton,
+          }),
+          Modal({
+            visible: modalVisible,
+            title: "Contoh Modal",
+            width: 420,
+            height: 220,
+            onClose: () => setModalVisible(false),
+            style: {
+              padding: 20,
+              gap: 12,
+              backgroundColor: "#ffffff",
+            },
+            children: [
+              Text("Ini adalah dialog modal native."),
+              Button({
+                text: "Tutup",
+                onClick: () => setModalVisible(false),
+                style: styles.primaryButton,
+              }),
+            ],
           }),
           Text(`Count: ${count}`),
           Button({

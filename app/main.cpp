@@ -564,6 +564,7 @@
 
 #include <QApplication>
 #include <QWidget>
+#include <QDialog>
 #include <QWindow>
 #include <QScrollArea>
 #include <QFrame>
@@ -593,6 +594,13 @@
 #include <QSet>
 #include <QResizeEvent>
 #include <QCloseEvent>
+#include <QTableWidget>
+#include <QTableWidgetItem>
+#include <QHeaderView>
+#include <QAbstractItemView>
+#include <QBrush>
+#include <QColor>
+#include <QSignalBlocker>
 
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
@@ -615,6 +623,7 @@ public:
     QVBoxLayout *contentLayout = nullptr;
     QJsonObject windowEvents;
     QLineEdit *autoFocusInput = nullptr;
+    QList<QDialog *> modalDialogs;
     int styleObjectCounter = 0;
 
     // Menampung data output Node.js sebelum diproses per baris.
@@ -880,6 +889,39 @@ public:
 
         bool eventFilter(QObject *watched, QEvent *event) override
         {
+            if (auto *viewport = qobject_cast<QWidget *>(watched)) {
+                if (event->type() == QEvent::MouseButtonPress) {
+                    viewport->setProperty("juliaResizeInProgress", true);
+                    viewport->setProperty("juliaPendingResizeColumn", -1);
+                } else if (event->type() == QEvent::MouseButtonRelease) {
+                    const QString eventId =
+                        viewport->property("juliaTableResizeEvent").toString();
+                    const int column =
+                        viewport->property("juliaPendingResizeColumn").toInt();
+                    const int width =
+                        viewport->property("juliaPendingResizeWidth").toInt();
+                    const bool resizeInProgress =
+                        viewport->property("juliaResizeInProgress").toBool();
+                    if (resizeInProgress && !eventId.isEmpty() &&
+                        column >= 0 && width > 0) {
+                        QJsonObject message;
+                        message["type"] = "tableResize";
+                        message["id"] = eventId;
+                        message["columnIndex"] = column;
+                        message["width"] = width;
+                        node->write(
+                            QJsonDocument(message)
+                                .toJson(QJsonDocument::Compact) + "\n"
+                        );
+                        viewport->setProperty(
+                            "juliaPendingResizeColumn",
+                            -1
+                        );
+                    }
+                    viewport->setProperty("juliaResizeInProgress", false);
+                }
+            }
+
             if (watched == window) {
                 if (event->type() == QEvent::Close) {
                     const QString eventId = windowEvents["close"].toString();
@@ -1383,7 +1425,318 @@ public:
             return createView(data);
         }
 
+        if (type == "Table") {
+            return createTable(data);
+        }
+
+        if (type == "Modal") {
+            createModal(data);
+            return nullptr;
+        }
+
         return nullptr;
+    }
+
+    void applyTableItemStyle(
+        QTableWidgetItem *item,
+        const QJsonObject &style
+    ) {
+        const QString foreground = style["color"].toString();
+        if (!foreground.isEmpty()) {
+            item->setForeground(QBrush(QColor(foreground)));
+        }
+
+        const QString background = style["backgroundColor"].toString(
+            style["background-color"].toString()
+        );
+        if (!background.isEmpty()) {
+            item->setBackground(QBrush(QColor(background)));
+        }
+
+        QFont font = item->font();
+        if (style["fontWeight"].toString() == "bold") {
+            font.setBold(true);
+        }
+        if (style["fontSize"].isDouble()) {
+            font.setPointSizeF(style["fontSize"].toDouble());
+        }
+        item->setFont(font);
+
+        const QString alignment = style["textAlign"].toString();
+        if (alignment == "center") {
+            item->setTextAlignment(Qt::AlignCenter);
+        } else if (alignment == "right") {
+            item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        } else {
+            item->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        }
+    }
+
+    QWidget *createTable(const QJsonObject &data)
+    {
+        const QJsonObject props = data["props"].toObject();
+        const QJsonObject events = data["events"].toObject();
+        const QJsonArray columns = props["columns"].toArray();
+        const QJsonArray children = data["children"].toArray();
+        const int rowCount = props["rowCount"].toInt();
+        const bool hasEmptyContent = props["empty"].toBool(false) &&
+            !children.isEmpty();
+        const int nativeRows = rowCount > 0 ? rowCount : hasEmptyContent ? 1 : 0;
+        const int nativeColumns = columns.size();
+
+        auto *table = new QTableWidget(nativeRows, nativeColumns);
+        table->setSizePolicy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Expanding
+        );
+        table->setAlternatingRowColors(true);
+        table->setShowGrid(true);
+        table->setWordWrap(false);
+        table->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        table->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        table->setSelectionBehavior(QAbstractItemView::SelectRows);
+        table->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        table->verticalHeader()->setVisible(false);
+        table->verticalHeader()->setDefaultSectionSize(32);
+
+        applyStyle(table, props["style"].toObject());
+
+        const QJsonObject headerStyle = props["headerStyle"].toObject();
+        QHeaderView *header = table->horizontalHeader();
+        header->setSectionsClickable(true);
+        header->setSectionsMovable(false);
+        header->setSortIndicatorShown(true);
+        header->setSectionResizeMode(QHeaderView::Interactive);
+        header->setStretchLastSection(true);
+        header->setDefaultSectionSize(140);
+        if (!headerStyle.isEmpty()) {
+            applyStyle(header, headerStyle);
+        }
+
+        QList<int> columnMinimumWidths;
+        for (int columnIndex = 0; columnIndex < nativeColumns; ++columnIndex) {
+            const QJsonObject column = columns[columnIndex].toObject();
+            const QString title = column["title"].toString();
+            auto *headerItem = new QTableWidgetItem(title);
+            applyTableItemStyle(headerItem, props["headerTextStyle"].toObject());
+            table->setHorizontalHeaderItem(columnIndex, headerItem);
+
+            const int minWidth = styleLengthPixels(
+                column["minWidth"],
+                40
+            );
+            columnMinimumWidths.append(qMax(24, minWidth));
+
+            const int width = styleLengthPixels(column["width"]);
+            if (width >= 0) {
+                header->resizeSection(
+                    columnIndex,
+                    qMax(columnMinimumWidths[columnIndex], width)
+                );
+            }
+        }
+
+        int childIndex = 0;
+        for (int row = 0; row < rowCount; ++row) {
+            for (int column = 0; column < nativeColumns; ++column) {
+                const QJsonObject cell =
+                    childIndex < children.size()
+                        ? children[childIndex++].toObject()
+                        : QJsonObject();
+                const QJsonObject cellProps = cell["props"].toObject();
+                const QString text = cell["type"].toString() == "Text"
+                    ? cellProps["text"].toString()
+                    : QString();
+                auto *item = new QTableWidgetItem(text);
+                item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+                applyTableItemStyle(item, props["rowStyle"].toObject());
+                applyTableItemStyle(item, props["cellStyle"].toObject());
+                if (cell["type"].toString() == "Text") {
+                    applyTableItemStyle(item, cellProps["style"].toObject());
+                }
+                table->setItem(row, column, item);
+
+                if (cell["type"].toString() != "Text") {
+                    if (QWidget *cellWidget = createNode(cell)) {
+                        table->setCellWidget(row, column, cellWidget);
+                    }
+                }
+            }
+        }
+
+        if (hasEmptyContent && nativeColumns > 0) {
+            QWidget *emptyWidget = createNode(children[0].toObject());
+            if (emptyWidget) {
+                table->setCellWidget(0, 0, emptyWidget);
+                if (nativeColumns > 1) {
+                    table->setSpan(0, 0, 1, nativeColumns);
+                }
+            }
+        }
+
+        int sortColumn = props["sortColumn"].toInt(-1);
+        bool sortAscending = props["sortAscending"].toBool(true);
+        if (sortColumn >= 0 && sortColumn < nativeColumns) {
+            header->setSortIndicator(
+                sortColumn,
+                sortAscending ? Qt::AscendingOrder : Qt::DescendingOrder
+            );
+        } else {
+            header->setSortIndicator(-1, Qt::AscendingOrder);
+        }
+
+        const QString sortEventId = events["sort"].toString();
+        const QString resizeEventId = events["resize"].toString();
+        connect(header, &QHeaderView::sectionClicked, this,
+            [this, table, columns, sortEventId](int columnIndex) {
+                if (columnIndex < 0 || columnIndex >= columns.size()) return;
+                if (!columns[columnIndex].toObject()["sortable"].toBool(true)) {
+                    return;
+                }
+
+                const int previousColumn =
+                    table->property("juliaSortColumn").toInt();
+                const bool ascending =
+                    previousColumn != columnIndex ||
+                    !table->property("juliaSortAscending").toBool();
+                table->setProperty("juliaSortColumn", columnIndex);
+                table->setProperty("juliaSortAscending", ascending);
+
+                table->horizontalHeader()->setSortIndicator(
+                    columnIndex,
+                    ascending ? Qt::AscendingOrder : Qt::DescendingOrder
+                );
+                if (!sortEventId.isEmpty()) {
+                    QJsonObject message;
+                    message["type"] = "tableSort";
+                    message["id"] = sortEventId;
+                    message["columnIndex"] = columnIndex;
+                    message["ascending"] = ascending;
+                    node->write(
+                        QJsonDocument(message)
+                            .toJson(QJsonDocument::Compact) + "\n"
+                    );
+                }
+            }
+        );
+
+        table->setProperty("juliaSortColumn", sortColumn);
+        table->setProperty("juliaSortAscending", sortAscending);
+
+        QWidget *headerViewport = header->viewport();
+        headerViewport->setProperty("juliaTableResizeEvent", resizeEventId);
+        headerViewport->setProperty("juliaPendingResizeColumn", -1);
+        headerViewport->setProperty("juliaResizeInProgress", false);
+        headerViewport->installEventFilter(this);
+        connect(header, &QHeaderView::sectionResized, this,
+            [table, header, headerViewport, columnMinimumWidths](
+                int section,
+                int,
+                int width
+            ) {
+                if (section < 0 || section >= columnMinimumWidths.size()) return;
+                const int minimum = columnMinimumWidths[section];
+                if (width < minimum) {
+                    const QSignalBlocker blocker(header);
+                    header->resizeSection(section, minimum);
+                    width = minimum;
+                }
+                int otherSectionsWidth = 0;
+                for (int column = 0; column < header->count(); ++column) {
+                    if (column != section) {
+                        otherSectionsWidth += header->sectionSize(column);
+                    }
+                }
+                const int maximum = qMax(
+                    minimum,
+                    table->viewport()->width() - otherSectionsWidth
+                );
+                if (width > maximum) {
+                    const QSignalBlocker blocker(header);
+                    header->resizeSection(section, maximum);
+                    width = maximum;
+                }
+                if (!headerViewport->property(
+                        "juliaResizeInProgress"
+                    ).toBool()) {
+                    return;
+                }
+                headerViewport->setProperty(
+                    "juliaPendingResizeColumn",
+                    section
+                );
+                headerViewport->setProperty(
+                    "juliaPendingResizeWidth",
+                    width
+                );
+            }
+        );
+        return table;
+    }
+
+    void clearModalDialogs()
+    {
+        for (QDialog *dialog : modalDialogs) {
+            if (!dialog) continue;
+            QObject::disconnect(dialog, nullptr, this, nullptr);
+            dialog->close();
+            delete dialog;
+        }
+        modalDialogs.clear();
+    }
+
+    void createModal(const QJsonObject &data)
+    {
+        const QJsonObject props = data["props"].toObject();
+        if (!props["visible"].toBool(false)) return;
+
+        const QJsonObject style = props["style"].toObject();
+        const QJsonObject events = data["events"].toObject();
+        auto *dialog = new QDialog(window);
+        dialog->setWindowTitle(props["title"].toString());
+        dialog->setWindowModality(Qt::ApplicationModal);
+
+        const int width = styleLengthPixels(
+            styleValue(style, "width", "width"),
+            props["width"].toInt(420)
+        );
+        const int height = styleLengthPixels(
+            styleValue(style, "height", "height"),
+            props["height"].toInt(280)
+        );
+        dialog->setFixedSize(width, height);
+
+        auto *layout = new QVBoxLayout(dialog);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(0);
+
+        QWidget *content = createFlexContainer(data, "column");
+        layout->addWidget(content);
+        modalDialogs.append(dialog);
+
+        const QString closeEventId = events["close"].toString();
+        if (!closeEventId.isEmpty()) {
+            connect(dialog, &QDialog::finished, this,
+                [this, closeEventId](int) {
+                    QJsonObject message;
+                    message["type"] = "modalClose";
+                    message["id"] = closeEventId;
+                    node->write(
+                        QJsonDocument(message)
+                            .toJson(QJsonDocument::Compact) + "\n"
+                    );
+                }
+            );
+        }
+
+        QTimer::singleShot(0, dialog, [this, dialog]() {
+            if (!dialog->isVisible()) {
+                dialog->move(
+                    window->geometry().center() - dialog->rect().center()
+                );
+                dialog->open();
+            }
+        });
     }
 
     QWidget *createView(const QJsonObject &data)
@@ -1392,7 +1745,34 @@ public:
         QString direction = props["style"].toObject()["flexDirection"]
             .toString(props["direction"].toString("column"));
 
-        return createFlexContainer(data, direction);
+        QWidget *content = createFlexContainer(data, direction);
+        if (!props["scrollable"].toBool(false)) {
+            return content;
+        }
+
+        auto *scrollArea = new QScrollArea();
+        scrollArea->setFrameShape(QFrame::NoFrame);
+        scrollArea->setWidgetResizable(true);
+        scrollArea->setSizePolicy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Expanding
+        );
+        scrollArea->setWidget(content);
+
+        const QString scrollDirection =
+            props["scrollDirection"].toString("auto");
+        scrollArea->setHorizontalScrollBarPolicy(
+            scrollDirection == "vertical"
+                ? Qt::ScrollBarAlwaysOff
+                : Qt::ScrollBarAsNeeded
+        );
+        scrollArea->setVerticalScrollBarPolicy(
+            scrollDirection == "horizontal"
+                ? Qt::ScrollBarAlwaysOff
+                : Qt::ScrollBarAsNeeded
+        );
+
+        return scrollArea;
     }
 
     QWidget *createRow(const QJsonObject &data)
@@ -1785,6 +2165,7 @@ public:
 
         // Mengambil object utama dan properti window.
         QJsonObject root = document.object();
+        clearModalDialogs();
         QJsonObject props = root["props"].toObject();
         QJsonObject style = props["style"].toObject();
         windowEvents = root["events"].toObject();

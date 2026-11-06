@@ -5,7 +5,10 @@ export type ComponentType =
   | "Text"
   | "TextInput"
   | "Button"
-  | "View";
+  | "View"
+  | "Card"
+  | "Modal"
+  | "Table";
 
 export type EventHandler = (...args: any[]) => void;
 export type EventMap = Record<string, string>;
@@ -148,6 +151,16 @@ export interface ButtonProps {
   style?: StyleProps;
 }
 
+export interface ModalProps {
+  visible?: boolean;
+  title?: string;
+  width?: number;
+  height?: number;
+  onClose?: () => void;
+  style?: StyleProps;
+  children?: VNode[];
+}
+
 export type TextInputType = "text" | "password" | "number" | "email";
 
 export interface TextInputProps {
@@ -172,4 +185,49 @@ export interface ViewProps extends LayoutProps {
     | "space-around";
   alignItems?: "flex-start" | "center" | "flex-end" | "stretch";
   flex?: number;
+}
+
+export interface FlatListRenderItemInfo<T> {
+  item: T;
+  index: number;
+}
+
+export interface FlatListSeparatorInfo<T> {
+  leadingItem: T;
+  trailingItem: T;
+}
+
+export interface FlatListProps<T> {
+  data: readonly T[];
+  renderItem: (info: FlatListRenderItemInfo<T>) => VNode;
+  horizontal?: boolean;
+  scrollDirection?: ScrollDirection;
+  scrollEnabled?: boolean;
+  ItemSeparatorComponent?: (
+    info: FlatListSeparatorInfo<T>,
+  ) => VNode;
+  ListEmptyComponent?: VNode | (() => VNode);
+  style?: StyleProps;
+  contentContainerStyle?: StyleProps;
+}
+
+export interface TableColumn<T extends object> {
+  key: keyof T;
+  title: string;
+  width?: CSSLength;
+  minWidth?: CSSLength;
+  sortable?: boolean;
+  render?: (item: T, index: number) => VNode;
+  compare?: (left: T, right: T) => number;
+}
+
+export interface TableProps<T extends object> {
+  data: readonly T[];
+  columns: readonly TableColumn<T>[];
+  style?: StyleProps;
+  headerStyle?: StyleProps;
+  headerTextStyle?: StyleProps;
+  rowStyle?: StyleProps;
+  cellStyle?: StyleProps;
+  emptyComponent?: VNode | (() => VNode);
 }

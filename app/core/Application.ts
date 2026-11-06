@@ -7,7 +7,9 @@ import {
   setStateRenderCallback,
 } from "./state";
 import { clearButtonCallbacks } from "./components/Button";
+import { clearModalCallbacks } from "./components/Modal";
 import { clearTextInputCallbacks } from "./components/TextInput";
+import { clearTableCallbacks } from "./components/Table";
 import { clearWidgetCallbacks } from "./components/Widget";
 
 // Mengatur ulang console.log untuk mengirim pesan ke stderr.
@@ -38,6 +40,8 @@ export class Application {
     const renderApp = () => {
       beginStateRender();
       clearButtonCallbacks();
+      clearModalCallbacks();
+      clearTableCallbacks();
       clearTextInputCallbacks();
       clearWidgetCallbacks();
 
