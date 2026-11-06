@@ -3,6 +3,7 @@ declare const process: any;
 import { VNode } from "./types";
 import { dispatchEvent } from "./components/Button";
 import { dispatchChange } from "./components/TextInput";
+import { dispatchWidgetEvent } from "./components/Widget";
 
 // Mengubah VNode menjadi JSON untuk dikirim ke C++.
 function serialize(node: VNode): any {
@@ -46,6 +47,20 @@ export function listenNativeEvents(): void {
           dispatchEvent(message.id);
         } else if (message.type === "change") {
           dispatchChange(message.id, message.value);
+        } else if (message.type === "windowEvent") {
+          try {
+            if (message.event === "resize") {
+              dispatchWidgetEvent(message.id, message.width, message.height);
+            } else {
+              dispatchWidgetEvent(message.id);
+            }
+          } finally {
+            if (message.event === "close") {
+              process.stdout.write(
+                '__JULIA_UI__{"type":"command","command":"windowCloseAck"}\n',
+              );
+            }
+          }
         }
       } catch (error) {
         console.error("Native event error:", error);

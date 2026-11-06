@@ -46,6 +46,16 @@ function Main() {
     title: "Style Test",
     width: 1024,
     height: 768,
+    position: { x: 0, y: 0 },
+    fullscreen: false,
+    resizable: false,
+    hideTitleBar: false,
+    alwaysOnTop: false,
+    onClose: () => console.log("Window closed"),
+    onResize: (width, height) =>
+      console.log(`Window resized: ${width}x${height}`),
+    onMaximize: () => console.log("Window maximized"),
+    onMinimize: () => console.log("Window minimized"),
     style: {
       padding: 18,
       gap: 12,

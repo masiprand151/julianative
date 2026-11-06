@@ -22,6 +22,16 @@ export interface WidgetProps {
   title?: string;
   width?: number;
   height?: number;
+  position?: { x: number; y: number };
+  resizable?: boolean;
+  fullscreen?: boolean;
+  hideTitleBar?: boolean;
+  alwaysOnTop?: boolean;
+  scrollable?: boolean;
+  onClose?: () => void;
+  onResize?: (width: number, height: number) => void;
+  onMaximize?: () => void;
+  onMinimize?: () => void;
   style?: StyleProps;
   body: VNode[];
 }

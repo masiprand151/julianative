@@ -15,6 +15,29 @@ to TypeScript files under `src` or `app/core` rebuild the UI and restart only
 the Node.js renderer; the native window stays open and refreshes in place.
 Changes to native C++ files require a manual rebuild and app restart.
 
+## Widget Window Options
+
+`Widget` supports window position, resizing, fullscreen, hiding the title bar,
+always-on-top, and optional content scrolling. Fullscreen uses the native
+fullscreen mode, which hides the title bar; `hideTitleBar` independently hides
+the title bar while the window is not fullscreen. Its `onClose`, `onResize`,
+`onMaximize`, and `onMinimize` callbacks are invoked for corresponding native
+window events.
+
+```ts
+Widget({
+  title: "My app",
+  position: { x: 100, y: 100 },
+  resizable: true,
+  fullscreen: false,
+  hideTitleBar: false,
+  alwaysOnTop: false,
+  scrollable: true,
+  onResize: (width, height) => console.log(width, height),
+  body: [],
+});
+```
+
 ## State
 
 Use `useState` inside the root component to keep values between renders. Calling

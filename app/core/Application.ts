@@ -8,6 +8,7 @@ import {
 } from "./state";
 import { clearButtonCallbacks } from "./components/Button";
 import { clearTextInputCallbacks } from "./components/TextInput";
+import { clearWidgetCallbacks } from "./components/Widget";
 
 // Mengatur ulang console.log untuk mengirim pesan ke stderr.
 function setupConsole(): void {
@@ -38,6 +39,7 @@ export class Application {
       beginStateRender();
       clearButtonCallbacks();
       clearTextInputCallbacks();
+      clearWidgetCallbacks();
 
       try {
         render(main());

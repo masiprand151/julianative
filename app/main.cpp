@@ -564,6 +564,9 @@
 
 #include <QApplication>
 #include <QWidget>
+#include <QWindow>
+#include <QScrollArea>
+#include <QFrame>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -588,6 +591,8 @@
 #include <QHash>
 #include <QEvent>
 #include <QSet>
+#include <QResizeEvent>
+#include <QCloseEvent>
 
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
@@ -605,6 +610,10 @@ public:
 
     // Window utama aplikasi JuliaNative.
     QWidget *window;
+    QScrollArea *scrollArea = nullptr;
+    QWidget *scrollContent = nullptr;
+    QVBoxLayout *contentLayout = nullptr;
+    QJsonObject windowEvents;
     QLineEdit *autoFocusInput = nullptr;
     int styleObjectCounter = 0;
 
@@ -619,6 +628,21 @@ public:
     QString nodePath;
     QString mainFile;
     QString workingDir;
+    bool applyingWindowProps = false;
+    bool hasAppliedPosition = false;
+    QPoint lastAppliedPosition;
+    QPoint requestedPosition;
+    bool hasRequestedPosition = false;
+    bool hasAppliedWindowSize = false;
+    QSize lastAppliedWindowSize;
+    bool windowAlwaysOnTop = false;
+    bool windowHideTitleBar = false;
+    bool hasAppliedWindowFlags = false;
+    bool windowResizable = true;
+    bool closePending = false;
+    bool closeAuthorized = false;
+    bool hasWindowState = false;
+    Qt::WindowStates lastWindowState;
 
     // Constructor: menyiapkan window dan koneksi komunikasi Node.js.
     JuliaRuntime()
@@ -669,6 +693,11 @@ public:
                             // Jika perintah adalah "exit", tutup aplikasi.
                             if (command == "exit") {
                                 QCoreApplication::quit();
+                            } else if (command == "windowCloseAck" &&
+                                       closePending)
+                            {
+                                closeAuthorized = true;
+                                window->close();
                             }
                         }
                         // Pesan untuk render UI
@@ -851,6 +880,64 @@ public:
 
         bool eventFilter(QObject *watched, QEvent *event) override
         {
+            if (watched == window) {
+                if (event->type() == QEvent::Close) {
+                    const QString eventId = windowEvents["close"].toString();
+                    if (!eventId.isEmpty() && !closeAuthorized) {
+                        auto *closeEvent = static_cast<QCloseEvent *>(event);
+                        closeEvent->ignore();
+                        if (!closePending) {
+                            closePending = true;
+                            sendWindowEvent(eventId, "close");
+                        }
+                        return true;
+                    }
+                    closePending = false;
+                    closeAuthorized = false;
+                    return false;
+                }
+
+                if (event->type() == QEvent::Resize && !applyingWindowProps) {
+                    const QString eventId = windowEvents["resize"].toString();
+                    if (!eventId.isEmpty()) {
+                        const auto *resizeEvent =
+                            static_cast<QResizeEvent *>(event);
+                        sendWindowEvent(
+                            eventId,
+                            "resize",
+                            resizeEvent->size().width(),
+                            resizeEvent->size().height()
+                        );
+                    }
+                }
+
+                if (event->type() == QEvent::WindowStateChange) {
+                    const Qt::WindowStates state = window->windowState();
+                    if (hasWindowState && state != lastWindowState) {
+                        if (state.testFlag(Qt::WindowMaximized) &&
+                            !lastWindowState.testFlag(Qt::WindowMaximized))
+                        {
+                            const QString eventId =
+                                windowEvents["maximize"].toString();
+                            if (!eventId.isEmpty()) {
+                                sendWindowEvent(eventId, "maximize");
+                            }
+                        }
+                        if (state.testFlag(Qt::WindowMinimized) &&
+                            !lastWindowState.testFlag(Qt::WindowMinimized))
+                        {
+                            const QString eventId =
+                                windowEvents["minimize"].toString();
+                            if (!eventId.isEmpty()) {
+                                sendWindowEvent(eventId, "minimize");
+                            }
+                        }
+                    }
+                    lastWindowState = state;
+                    hasWindowState = true;
+                }
+            }
+
             if (event->type() == QEvent::Resize) {
                 if (QWidget *parent = qobject_cast<QWidget *>(watched)) {
                     updatePercentSizedChildren(parent);
@@ -884,6 +971,25 @@ public:
             }
 
             return QObject::eventFilter(watched, event);
+        }
+
+        void sendWindowEvent(
+            const QString &id,
+            const QString &event,
+            int width = 0,
+            int height = 0
+        ) {
+            QJsonObject message;
+            message["type"] = "windowEvent";
+            message["id"] = id;
+            message["event"] = event;
+            if (event == "resize") {
+                message["width"] = width;
+                message["height"] = height;
+            }
+            const QByteArray output =
+                QJsonDocument(message).toJson(QJsonDocument::Compact);
+            node->write(output + "\n");
         }
 
         void updatePercentSizedChildren(QWidget *parent)
@@ -1681,29 +1787,108 @@ public:
         QJsonObject root = document.object();
         QJsonObject props = root["props"].toObject();
         QJsonObject style = props["style"].toObject();
+        windowEvents = root["events"].toObject();
 
         // Mengatur judul window dari properti Widget.
         window->setWindowTitle(
             props["title"].toString("JuliaNative")
         );
 
-        // Mengatur ukuran window dari properti Widget.
-        window->resize(
+        applyingWindowProps = true;
+        const QSize requestedSize(
             props["width"].toInt(500),
             props["height"].toInt(350)
         );
-        applyStyle(window, style);
+        const bool windowSizeChanged =
+            !hasAppliedWindowSize || requestedSize != lastAppliedWindowSize;
 
-        // Mengambil layout utama window jika sudah tersedia.
-        QVBoxLayout *layout =
-            qobject_cast<QVBoxLayout *>(window->layout());
-
-        // Membuat layout utama jika belum tersedia.
-       if (!layout) {
-            layout = new QVBoxLayout(window);
-
+        hasRequestedPosition = props["position"].isObject();
+        if (hasRequestedPosition) {
+            const QJsonObject position = props["position"].toObject();
+            requestedPosition = QPoint(
+                position["x"].toInt(),
+                position["y"].toInt()
+            );
         }
 
+        const bool alwaysOnTop = props["alwaysOnTop"].toBool(false);
+        const bool hideTitleBar = props["hideTitleBar"].toBool(false);
+        const bool windowFlagsChanged =
+            !hasAppliedWindowFlags ||
+            windowAlwaysOnTop != alwaysOnTop ||
+            windowHideTitleBar != hideTitleBar;
+        if (windowFlagsChanged) {
+            Qt::WindowFlags flags = window->windowFlags();
+            flags.setFlag(Qt::WindowStaysOnTopHint, alwaysOnTop);
+            flags.setFlag(Qt::FramelessWindowHint, hideTitleBar);
+            flags.setFlag(Qt::WindowTitleHint, !hideTitleBar);
+            window->setWindowFlags(flags);
+            windowAlwaysOnTop = alwaysOnTop;
+            windowHideTitleBar = hideTitleBar;
+            hasAppliedWindowFlags = true;
+        }
+
+        const bool resizable = props["resizable"].toBool(true);
+        const bool resizableChanged = windowResizable != resizable;
+        if (resizableChanged && resizable) {
+            window->setMinimumSize(0, 0);
+            window->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+        }
+        if (resizableChanged || windowSizeChanged) {
+            if (resizable) window->resize(requestedSize);
+            else window->setFixedSize(requestedSize);
+            windowResizable = resizable;
+            lastAppliedWindowSize = requestedSize;
+            hasAppliedWindowSize = true;
+        }
+        applyStyle(window, style);
+
+        const bool fullscreen = props["fullscreen"].toBool(false);
+        const bool leavingFullscreen = !fullscreen && window->isFullScreen();
+        if (fullscreen && !window->isFullScreen()) {
+            window->showFullScreen();
+        } else if (leavingFullscreen) {
+            window->showNormal();
+        }
+
+        const bool scrollable = props["scrollable"].toBool(false);
+        if (!scrollArea) {
+            auto *windowLayout = new QVBoxLayout(window);
+            windowLayout->setContentsMargins(0, 0, 0, 0);
+            windowLayout->setSpacing(0);
+
+            scrollArea = new QScrollArea(window);
+            scrollArea->setFrameShape(QFrame::NoFrame);
+            scrollArea->setWidgetResizable(true);
+            scrollContent = new QWidget(scrollArea);
+            scrollContent->installEventFilter(this);
+            contentLayout = new QVBoxLayout(scrollContent);
+            scrollArea->setWidget(scrollContent);
+            windowLayout->addWidget(scrollArea);
+        }
+        scrollArea->setHorizontalScrollBarPolicy(
+            scrollable ? Qt::ScrollBarAsNeeded : Qt::ScrollBarAlwaysOff
+        );
+        scrollArea->setVerticalScrollBarPolicy(
+            scrollable ? Qt::ScrollBarAsNeeded : Qt::ScrollBarAlwaysOff
+        );
+
+        QVBoxLayout *layout = contentLayout;
+        if (!layout) {
+            qWarning() << "Widget content layout is unavailable.";
+            applyingWindowProps = false;
+            return;
+        }
+
+        /*
+         * Root children live in the scroll area's content widget so the
+         * window can enable scrolling without rebuilding its native shell.
+         */
+        layout->setContentsMargins(0, 0, 0, 0);
+
+        /*
+         * Keep the root layout reusable across state-driven renders.
+         */
        int focusedInputIndex = -1;
        int focusedCursorPosition = -1;
        if (auto *focusedInput = qobject_cast<QLineEdit *>(
@@ -1748,8 +1933,22 @@ public:
         }
 
         // Menampilkan window setelah UI selesai dibuat.
+        updatePercentSizedChildren(scrollContent);
         updatePercentSizedChildren(window);
         window->show();
+        const bool positionChanged =
+            hasRequestedPosition &&
+            (!hasAppliedPosition || requestedPosition != lastAppliedPosition);
+        if (hasRequestedPosition &&
+            (positionChanged || windowFlagsChanged || leavingFullscreen))
+        {
+            window->windowHandle()->setPosition(requestedPosition);
+            lastAppliedPosition = requestedPosition;
+            hasAppliedPosition = true;
+        }
+        lastWindowState = window->windowState();
+        hasWindowState = true;
+        applyingWindowProps = false;
         const QList<QLineEdit *> currentInputs =
             window->findChildren<QLineEdit *>();
         if (focusedInputIndex >= 0 &&
