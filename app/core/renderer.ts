@@ -2,6 +2,7 @@ declare const process: any;
 
 import { VNode } from "./types";
 import { dispatchEvent } from "./components/Button";
+import { dispatchFloatingActionButtonPress } from "./components/FloatingActionButton";
 import { dispatchModalClose } from "./components/Modal";
 import { dispatchChange } from "./components/TextInput";
 import { dispatchTableResize, dispatchTableSort } from "./components/Table";
@@ -47,6 +48,7 @@ export function listenNativeEvents(): void {
 
         if (message.type === "click") {
           dispatchEvent(message.id);
+          dispatchFloatingActionButtonPress(message.id);
         } else if (message.type === "change") {
           dispatchChange(message.id, message.value);
         } else if (message.type === "modalClose") {

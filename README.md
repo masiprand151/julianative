@@ -134,8 +134,8 @@ Table({
     { name: "Grace", year: 1952 },
   ],
   columns: [
-    { key: "name", title: "Name" },
-    { key: "year", title: "Year", width: 90 },
+    { key: "name", title: "Name", width: 180 },
+    { key: "year", title: "Year" },
   ],
   style: { height: 240 },
 });
@@ -169,6 +169,21 @@ Card({
     Text("Manage your account details"),
     Button({ text: "Edit profile" }),
   ],
+});
+```
+
+## FloatingActionButton
+
+`FloatingActionButton` is a circular native action button anchored over the
+window content. Place it directly in `Widget.body` so it floats above the
+regular layout. It defaults to the bottom-right corner; choose another corner
+with `placement` or adjust its distance from the edge with `margin`.
+
+```ts
+FloatingActionButton({
+  icon: "+",
+  accessibilityLabel: "Add item",
+  onPress: () => console.log("Add item"),
 });
 ```
 

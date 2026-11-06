@@ -624,6 +624,7 @@ public:
     QJsonObject windowEvents;
     QLineEdit *autoFocusInput = nullptr;
     QList<QDialog *> modalDialogs;
+    QList<QWidget *> floatingActionButtons;
     int styleObjectCounter = 0;
 
     // Menampung data output Node.js sebelum diproses per baris.
@@ -940,6 +941,7 @@ public:
                 }
 
                 if (event->type() == QEvent::Resize && !applyingWindowProps) {
+                    positionFloatingActionButtons();
                     const QString eventId = windowEvents["resize"].toString();
                     if (!eventId.isEmpty()) {
                         const auto *resizeEvent =
@@ -1383,13 +1385,22 @@ public:
             return input;
         }
 
-        if (type == "Button") {
+        if (type == "Button" || type == "FloatingActionButton") {
+            const bool isFloatingActionButton =
+                type == "FloatingActionButton";
             QPushButton *button = new QPushButton(
-                props["text"].toString()
+                isFloatingActionButton
+                    ? props["icon"].toString("+")
+                    : props["text"].toString()
             );
 
-            applyStyle(button, props["style"].toObject(), {}, true);
+            if (isFloatingActionButton) {
+                button->setAccessibleName(
+                    props["accessibilityLabel"].toString()
+                );
+            }
 
+            applyStyle(button, props["style"].toObject(), {}, true);
 
             QString eventId = events["click"].toString();
 
@@ -1683,6 +1694,39 @@ public:
             delete dialog;
         }
         modalDialogs.clear();
+    }
+
+    void clearFloatingActionButtons()
+    {
+        for (QWidget *button : floatingActionButtons) {
+            delete button;
+        }
+        floatingActionButtons.clear();
+    }
+
+    void positionFloatingActionButtons()
+    {
+        for (QWidget *button : floatingActionButtons) {
+            if (!button) continue;
+
+            const int margin = qMax(
+                0,
+                button->property("juliaFabMargin").toInt()
+            );
+            const QString placement =
+                button->property("juliaFabPlacement").toString();
+            const bool right = placement.endsWith("right");
+            const bool bottom = placement.startsWith("bottom");
+            const int x = right
+                ? qMax(margin, window->width() - button->width() - margin)
+                : margin;
+            const int y = bottom
+                ? qMax(margin, window->height() - button->height() - margin)
+                : margin;
+
+            button->move(x, y);
+            button->raise();
+        }
     }
 
     void createModal(const QJsonObject &data)
@@ -2288,6 +2332,7 @@ public:
 
         // Menghapus seluruh widget dari tampilan sebelumnya.
         autoFocusInput = nullptr;
+        clearFloatingActionButtons();
         while (QLayoutItem *item = layout->takeAt(0)) {
             if (QWidget *widget = item->widget()) {
                 delete widget;
@@ -2305,6 +2350,25 @@ public:
             QWidget *widget = createNode(childData);
 
             if (widget) {
+                if (childData["type"].toString() ==
+                    "FloatingActionButton")
+                {
+                    const QJsonObject fabProps =
+                        childData["props"].toObject();
+                    widget->setParent(window);
+                    widget->setProperty(
+                        "juliaFabPlacement",
+                        fabProps["placement"].toString("bottom-right")
+                    );
+                    widget->setProperty(
+                        "juliaFabMargin",
+                        fabProps["margin"].toInt(24)
+                    );
+                    floatingActionButtons.append(widget);
+                    widget->show();
+                    continue;
+                }
+
                 // Membaca properti flex untuk elemen root-level juga
                 QJsonObject childProps = childData["props"].toObject();
                 int flex = qMax(0, childProps["flex"].toInt(0));
@@ -2317,6 +2381,7 @@ public:
         updatePercentSizedChildren(scrollContent);
         updatePercentSizedChildren(window);
         window->show();
+        positionFloatingActionButtons();
         const bool positionChanged =
             hasRequestedPosition &&
             (!hasAppliedPosition || requestedPosition != lastAppliedPosition);

@@ -7,6 +7,7 @@ import {
   Text,
   TextInput,
   Button,
+  FloatingActionButton,
   Card,
   FlatList,
   Modal,
@@ -170,8 +171,8 @@ function Main() {
               },
             ],
             columns: [
-              { key: "name", title: "Name" },
-              { key: "role", title: "Role" },
+              { key: "name", title: "Name", width: 180 },
+              { key: "role", title: "Role", width: 240 },
               { key: "year", title: "Year" },
             ],
             style: {
@@ -273,6 +274,11 @@ function Main() {
             ],
           }),
         ],
+      }),
+      FloatingActionButton({
+        icon: "+",
+        accessibilityLabel: "Tambah",
+        onPress: () => setCount((currentCount) => currentCount + 1),
       }),
     ],
   });

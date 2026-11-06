@@ -7,6 +7,7 @@ export type ComponentType =
   | "Button"
   | "View"
   | "Card"
+  | "FloatingActionButton"
   | "Modal"
   | "Table";
 
@@ -148,6 +149,15 @@ export interface TextProps {
 export interface ButtonProps {
   text: string;
   onClick?: () => void;
+  style?: StyleProps;
+}
+
+export interface FloatingActionButtonProps {
+  icon?: string;
+  accessibilityLabel?: string;
+  placement?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  margin?: number;
+  onPress?: () => void;
   style?: StyleProps;
 }
 

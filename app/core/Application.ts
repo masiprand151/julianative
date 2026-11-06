@@ -7,6 +7,7 @@ import {
   setStateRenderCallback,
 } from "./state";
 import { clearButtonCallbacks } from "./components/Button";
+import { clearFloatingActionButtonCallbacks } from "./components/FloatingActionButton";
 import { clearModalCallbacks } from "./components/Modal";
 import { clearTextInputCallbacks } from "./components/TextInput";
 import { clearTableCallbacks } from "./components/Table";
@@ -40,6 +41,7 @@ export class Application {
     const renderApp = () => {
       beginStateRender();
       clearButtonCallbacks();
+      clearFloatingActionButtonCallbacks();
       clearModalCallbacks();
       clearTableCallbacks();
       clearTextInputCallbacks();

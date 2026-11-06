@@ -135,8 +135,8 @@ export function Table<T extends object>(props: TableProps<T>): VNode {
       headerStyle: props.headerStyle ?? {},
       headerTextStyle: props.headerTextStyle ?? {},
       rowStyle: props.rowStyle ?? {
-        backgroundColor: "#ffffff",
-        color: "#111111",
+        backgroundColor: "#f3f7f5",
+        color: "#193b35",
       },
       cellStyle: props.cellStyle ?? {},
       empty: props.data.length === 0 && props.emptyComponent !== undefined,

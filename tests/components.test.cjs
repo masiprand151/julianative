@@ -5,6 +5,11 @@ const { Card } = require("../app/build/app/core/components/Card.js");
 const { Column } = require("../app/build/app/core/components/Column.js");
 const { FlatList } = require("../app/build/app/core/components/FlatList.js");
 const {
+  clearFloatingActionButtonCallbacks,
+  dispatchFloatingActionButtonPress,
+  FloatingActionButton,
+} = require("../app/build/app/core/components/FloatingActionButton.js");
+const {
   Button,
   clearButtonCallbacks,
   dispatchEvent,
@@ -141,6 +146,48 @@ test("FlatList renders an empty-state component for empty data", () => {
   assert.equal(list.children[0].children[0], emptyState);
 });
 
+test("FloatingActionButton creates a positioned native action node", () => {
+  const fab = FloatingActionButton({
+    icon: "+",
+    accessibilityLabel: "Add item",
+    onPress() {},
+  });
+
+  assert.equal(fab.type, "FloatingActionButton");
+  assert.equal(fab.props.icon, "+");
+  assert.equal(fab.props.accessibilityLabel, "Add item");
+  assert.equal(fab.props.placement, "bottom-right");
+  assert.equal(fab.props.margin, 24);
+  assert.equal(fab.props.style.width, 56);
+  assert.equal(fab.props.style.height, 56);
+  assert.equal(fab.events.click.startsWith("floating_action_"), true);
+});
+
+test("FloatingActionButton supports custom placement and style", () => {
+  const fab = FloatingActionButton({
+    placement: "top-left",
+    margin: 12,
+    style: { backgroundColor: "#123456", width: 64 },
+  });
+
+  assert.equal(fab.props.placement, "top-left");
+  assert.equal(fab.props.margin, 12);
+  assert.equal(fab.props.style.backgroundColor, "#123456");
+  assert.equal(fab.props.style.width, 64);
+});
+
+test("FloatingActionButton dispatches press callbacks and clears them", () => {
+  let presses = 0;
+  const fab = FloatingActionButton({ onPress: () => presses++ });
+
+  dispatchFloatingActionButtonPress(fab.events.click);
+  assert.equal(presses, 1);
+
+  clearFloatingActionButtonCallbacks();
+  dispatchFloatingActionButtonPress(fab.events.click);
+  assert.equal(presses, 1);
+});
+
 test("Table creates a native table node with column sizing and cell content", () => {
   beginStateRender();
   const table = Table({
@@ -167,6 +214,24 @@ test("Table creates a native table node with column sizing and cell content", ()
   assert.equal(table.children.length, 2);
   assert.equal(table.children[0].props.text, "Ada");
   assert.equal(table.children[1].props.text, "1843");
+});
+
+test("Table leaves the rightmost column flexible when no width is specified", () => {
+  beginStateRender();
+  const table = Table({
+    data: [{ name: "Ada", role: "Mathematician", year: 1843 }],
+    columns: [
+      { key: "name", title: "Name", width: 180 },
+      { key: "role", title: "Role", width: 240 },
+      { key: "year", title: "Year" },
+    ],
+  });
+  finishStateRender();
+
+  assert.deepEqual(
+    table.props.columns.map(({ width }) => width),
+    [180, 240, undefined],
+  );
 });
 
 test("Table sorts rows and preserves ascending and descending state", async () => {
