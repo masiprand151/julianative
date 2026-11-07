@@ -8,6 +8,7 @@ export * from "./Row";
 export * from "./Table";
 export * from "./Text";
 export * from "./TextInput";
+export * from "./Video";
 export * from "./Widget";
 export * from "./View";
 export * from "../StyleSheet";

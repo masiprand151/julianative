@@ -30,6 +30,7 @@ const {
   Widget,
 } = require("../app/build/app/core/components/Widget.js");
 const { Row } = require("../app/build/app/core/components/Row.js");
+const { Video } = require("../app/build/app/core/components/Video.js");
 const {
   clearTableCallbacks,
   dispatchTableResize,
@@ -176,6 +177,16 @@ test("FloatingActionButton supports custom placement and style", () => {
   assert.equal(fab.props.style.width, 64);
 });
 
+test("FloatingActionButton accepts a local image source", () => {
+  const fab = FloatingActionButton({
+    imageSource: "assets/add.png",
+    accessibilityLabel: "Add item",
+  });
+
+  assert.equal(fab.props.imageSource, "assets/add.png");
+  assert.equal(fab.props.accessibilityLabel, "Add item");
+});
+
 test("FloatingActionButton dispatches press callbacks and clears them", () => {
   let presses = 0;
   const fab = FloatingActionButton({ onPress: () => presses++ });
@@ -186,6 +197,35 @@ test("FloatingActionButton dispatches press callbacks and clears them", () => {
   clearFloatingActionButtonCallbacks();
   dispatchFloatingActionButtonPress(fab.events.click);
   assert.equal(presses, 1);
+});
+
+test("Video exposes playback options and container style", () => {
+  const style = { width: 640, height: 360 };
+  const video = Video({
+    source: "assets/demo.mp4",
+    autoplay: true,
+    loop: true,
+    muted: true,
+    style,
+  });
+
+  assert.equal(video.type, "Video");
+  assert.deepEqual(video.props, {
+    source: "assets/demo.mp4",
+    autoplay: true,
+    loop: true,
+    muted: true,
+    style,
+  });
+});
+
+test("Video playback is opt-in by default", () => {
+  const video = Video({ source: "assets/demo.mp4" });
+
+  assert.equal(video.props.autoplay, false);
+  assert.equal(video.props.loop, false);
+  assert.equal(video.props.muted, false);
+  assert.deepEqual(video.props.style, {});
 });
 
 test("Table creates a native table node with column sizing and cell content", () => {

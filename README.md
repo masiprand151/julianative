@@ -178,12 +178,30 @@ Card({
 window content. Place it directly in `Widget.body` so it floats above the
 regular layout. It defaults to the bottom-right corner; choose another corner
 with `placement` or adjust its distance from the edge with `margin`.
+Set `imageSource` to a local image path to use an image instead of the text icon.
 
 ```ts
 FloatingActionButton({
   icon: "+",
   accessibilityLabel: "Add item",
   onPress: () => console.log("Add item"),
+});
+```
+
+## Video
+
+`Video` renders a native player with play/pause and seek controls. Provide a
+local video path or a media URL; autoplay, looping, and muted audio are
+optional.
+On Windows, `npm run portable` includes the Qt Multimedia and FFmpeg runtime.
+
+```ts
+Video({
+  source: "assets/demo.mp4",
+  autoplay: false,
+  loop: true,
+  muted: false,
+  style: { width: 640, height: 360 },
 });
 ```
 

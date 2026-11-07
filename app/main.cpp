@@ -598,9 +598,16 @@
 #include <QTableWidgetItem>
 #include <QHeaderView>
 #include <QAbstractItemView>
+#include <QAudioOutput>
 #include <QBrush>
 #include <QColor>
+#include <QIcon>
+#include <QMediaPlayer>
+#include <QSlider>
 #include <QSignalBlocker>
+#include <QUrl>
+#include <QVideoWidget>
+#include <limits>
 
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
@@ -1398,6 +1405,32 @@ public:
                 button->setAccessibleName(
                     props["accessibilityLabel"].toString()
                 );
+                const QString imageSource =
+                    props["imageSource"].toString();
+                if (!imageSource.isEmpty()) {
+                    const QIcon icon(imageSource);
+                    if (icon.isNull()) {
+                        qWarning() << "Could not load FAB image:"
+                                   << imageSource;
+                    } else {
+                        button->setIcon(icon);
+                        button->setText(QString());
+                        const QJsonObject style =
+                            props["style"].toObject();
+                        const int width = styleLengthPixels(
+                            style["width"],
+                            56
+                        );
+                        const int height = styleLengthPixels(
+                            style["height"],
+                            56
+                        );
+                        button->setIconSize(QSize(
+                            qMax(1, width - 20),
+                            qMax(1, height - 20)
+                        ));
+                    }
+                }
             }
 
             applyStyle(button, props["style"].toObject(), {}, true);
@@ -1424,6 +1457,10 @@ public:
             return button;
         }
 
+        if (type == "Video") {
+            return createVideo(data);
+        }
+
         if (type == "Row") {
             return createRow(data);
         }
@@ -1446,6 +1483,143 @@ public:
         }
 
         return nullptr;
+    }
+
+    QWidget *createVideo(const QJsonObject &data)
+    {
+        const QJsonObject props = data["props"].toObject();
+        const QJsonObject style = props["style"].toObject();
+        const QString source = props["source"].toString();
+        if (source.isEmpty()) {
+            qWarning() << "Video requires a non-empty source.";
+            return nullptr;
+        }
+
+        auto *container = new QFrame();
+        container->setSizePolicy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Expanding
+        );
+        container->setMinimumHeight(180);
+        applyStyle(container, style);
+
+        auto *layout = new QVBoxLayout(container);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(4);
+
+        auto *videoWidget = new QVideoWidget(container);
+        videoWidget->setSizePolicy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Expanding
+        );
+        layout->addWidget(videoWidget, 1);
+
+        auto *controls = new QWidget(container);
+        auto *controlsLayout = new QHBoxLayout(controls);
+        controlsLayout->setContentsMargins(0, 0, 0, 0);
+
+        auto *playButton = new QPushButton("Play", controls);
+        auto *positionSlider = new QSlider(Qt::Horizontal, controls);
+        positionSlider->setRange(0, 0);
+        auto *timeLabel = new QLabel("00:00 / 00:00", controls);
+        auto *errorLabel = new QLabel(controls);
+        errorLabel->setWordWrap(true);
+        errorLabel->hide();
+
+        controlsLayout->addWidget(playButton);
+        controlsLayout->addWidget(positionSlider, 1);
+        controlsLayout->addWidget(timeLabel);
+        controls->setSizePolicy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Fixed
+        );
+        controls->setFixedHeight(32);
+        layout->addWidget(controls);
+        layout->addWidget(errorLabel);
+
+        auto *player = new QMediaPlayer(container);
+        auto *audioOutput = new QAudioOutput(player);
+        audioOutput->setMuted(props["muted"].toBool(false));
+        player->setAudioOutput(audioOutput);
+        player->setVideoOutput(videoWidget);
+
+        const auto formatTime = [](qint64 milliseconds) {
+            const qint64 seconds = qMax<qint64>(0, milliseconds / 1000);
+            return QString("%1:%2")
+                .arg(seconds / 60, 2, 10, QChar('0'))
+                .arg(seconds % 60, 2, 10, QChar('0'));
+        };
+        const auto updateTimeLabel =
+            [player, timeLabel, formatTime]() {
+                timeLabel->setText(
+                    formatTime(player->position()) + " / " +
+                    formatTime(player->duration())
+                );
+            };
+
+        connect(playButton, &QPushButton::clicked, player, [player]() {
+            if (player->playbackState() == QMediaPlayer::PlayingState) {
+                player->pause();
+            } else {
+                player->play();
+            }
+        });
+        connect(player, &QMediaPlayer::playbackStateChanged,
+            playButton, [playButton](QMediaPlayer::PlaybackState state) {
+                playButton->setText(
+                    state == QMediaPlayer::PlayingState ? "Pause" : "Play"
+                );
+            }
+        );
+        connect(player, &QMediaPlayer::durationChanged,
+            positionSlider, [positionSlider, updateTimeLabel](qint64 duration) {
+                positionSlider->setRange(0, static_cast<int>(
+                    qMin<qint64>(duration, std::numeric_limits<int>::max())
+                ));
+                updateTimeLabel();
+            }
+        );
+        connect(player, &QMediaPlayer::positionChanged,
+            positionSlider, [positionSlider, updateTimeLabel](qint64 position) {
+                const QSignalBlocker blocker(positionSlider);
+                positionSlider->setValue(static_cast<int>(position));
+                updateTimeLabel();
+            }
+        );
+        connect(positionSlider, &QSlider::sliderMoved,
+            player, [player](int position) {
+                player->setPosition(position);
+            }
+        );
+        connect(player, &QMediaPlayer::errorOccurred, errorLabel,
+            [errorLabel, source](
+                QMediaPlayer::Error,
+                const QString &errorString
+            ) {
+                const QString message = errorString.isEmpty()
+                    ? QString("Could not play video: %1").arg(source)
+                    : errorString;
+                errorLabel->setText(message);
+                errorLabel->show();
+                qWarning() << "Video playback error:" << message;
+            }
+        );
+        if (props["loop"].toBool(false)) {
+            connect(player, &QMediaPlayer::mediaStatusChanged, player,
+                [player](QMediaPlayer::MediaStatus status) {
+                    if (status == QMediaPlayer::EndOfMedia) {
+                        player->setPosition(0);
+                        player->play();
+                    }
+                }
+            );
+        }
+
+        player->setSource(QUrl::fromUserInput(source));
+        if (props["autoplay"].toBool(false)) {
+            player->play();
+        }
+        return container;
     }
 
     void applyTableItemStyle(

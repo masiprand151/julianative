@@ -5,6 +5,7 @@ export type ComponentType =
   | "Text"
   | "TextInput"
   | "Button"
+  | "Video"
   | "View"
   | "Card"
   | "FloatingActionButton"
@@ -154,10 +155,19 @@ export interface ButtonProps {
 
 export interface FloatingActionButtonProps {
   icon?: string;
+  imageSource?: string;
   accessibilityLabel?: string;
   placement?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
   margin?: number;
   onPress?: () => void;
+  style?: StyleProps;
+}
+
+export interface VideoProps {
+  source: string;
+  autoplay?: boolean;
+  loop?: boolean;
+  muted?: boolean;
   style?: StyleProps;
 }
 

@@ -17,6 +17,8 @@ find_package(Qt6 REQUIRED COMPONENTS
     Core
     Gui
     Widgets
+    Multimedia
+    MultimediaWidgets
 )
 
 set(APP_SOURCES
@@ -37,6 +39,8 @@ target_link_libraries(JuliaNative PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Multimedia
+    Qt6::MultimediaWidgets
 )
 
 target_include_directories(JuliaNative PRIVATE

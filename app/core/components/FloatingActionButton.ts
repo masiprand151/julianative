@@ -24,6 +24,7 @@ export function FloatingActionButton(
     type: "FloatingActionButton",
     props: {
       icon: props.icon ?? "+",
+      imageSource: props.imageSource,
       accessibilityLabel: props.accessibilityLabel ?? props.icon ?? "Add",
       placement: props.placement ?? "bottom-right",
       margin: props.margin ?? 24,
