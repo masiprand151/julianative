@@ -60,6 +60,51 @@ function Main() {
 }
 ```
 
+## Stack Navigation
+
+Keep the app's single `Widget` in `Main` and render a `Stack.Navigator` inside
+its body. Each screen receives `navigation` and `route` props. The navigator
+provides a header with a back button and title by default.
+
+```ts
+type AppStack = {
+  Home: undefined;
+  Details: { itemId: number };
+};
+
+const Stack = createStackNavigator<AppStack>();
+
+function Main() {
+  return Widget({
+    title: "My app",
+    body: [
+      Stack.Navigator({
+        initialRouteName: "Home",
+        screens: {
+          Home: {
+            options: { title: "Beranda" },
+            component: ({ navigation }) =>
+              Button({
+                text: "Lihat detail",
+                onClick: () => navigation.push("Details", { itemId: 42 }),
+              }),
+          },
+          Details: {
+            component: ({ route }) =>
+              Text(`Item ${route.params?.itemId}`),
+          },
+        },
+      }),
+    ],
+  });
+}
+```
+
+`push` always adds a screen to the stack. `navigate` opens a screen or returns
+to it if it is already in the stack. `goBack`, `replace`, and `popToTop` provide
+the other common stack actions. `screenOptions` sets defaults for screen
+headers; a screen can override `title` or set `headerShown: false`.
+
 ## StyleSheet
 
 Use `StyleSheet.create` to define and reuse component styles. Style properties
