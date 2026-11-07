@@ -3,6 +3,7 @@ export * from "./Card";
 export * from "./Column";
 export * from "./FlatList";
 export * from "./FloatingActionButton";
+export * from "./Image";
 export * from "./Modal";
 export * from "./Row";
 export * from "./Table";

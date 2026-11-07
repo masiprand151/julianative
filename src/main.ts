@@ -7,6 +7,7 @@ import {
   Text,
   TextInput,
   Button,
+  Image,
   FloatingActionButton,
   Card,
   FlatList,
@@ -91,6 +92,44 @@ function Main() {
               fontSize: 14,
               color: "#45635c",
             },
+          }),
+          Card({
+            title: "Gambar lokal dan online",
+            children: [
+              Row({
+                style: {
+                  gap: 16,
+                  alignItems: "center",
+                },
+                children: [
+                  Column({
+                    style: { gap: 6 },
+                    children: [
+                      Text("SVG lokal (offline)"),
+                      Image({
+                        source: "assets/demo.svg",
+                        alt: "Ilustrasi lokal",
+                        resizeMode: "contain",
+                        style: { width: 220, height: 120 },
+                      }),
+                    ],
+                  }),
+                  Column({
+                    style: { gap: 6 },
+                    children: [
+                      Text("JPG online"),
+                      Image({
+                        source:
+                          "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=480&q=80",
+                        alt: "Pemandangan dari Unsplash",
+                        resizeMode: "cover",
+                        style: { width: 220, height: 120 },
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
           }),
           Card({
             title: "Contoh Card",
@@ -277,6 +316,7 @@ function Main() {
       }),
       FloatingActionButton({
         icon: "+",
+        imageSource: "assets/demo.svg",
         accessibilityLabel: "Tambah",
         onPress: () => setCount((currentCount) => currentCount + 1),
       }),

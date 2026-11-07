@@ -584,6 +584,14 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QFileSystemWatcher>
+#include <QImage>
+#include <QPainter>
+#include <QPixmap>
+#include <QPointer>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QSvgRenderer>
 #include <QTimer>
 #include <QCoreApplication>
 #include <QSizePolicy>
@@ -607,6 +615,7 @@
 #include <QSignalBlocker>
 #include <QUrl>
 #include <QVideoWidget>
+#include <functional>
 #include <limits>
 
 #ifdef Q_OS_WIN
@@ -616,12 +625,65 @@
 #include <windows.h>
 #endif
 
+class NativeImageLabel : public QLabel
+{
+public:
+    using QLabel::QLabel;
+
+    void setImage(const QPixmap &value)
+    {
+        image = value;
+        update();
+    }
+
+    void setResizeMode(const QString &value)
+    {
+        resizeMode = value;
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override
+    {
+        QLabel::paintEvent(event);
+        if (image.isNull()) return;
+
+        const QRect area = contentsRect();
+        if (area.isEmpty()) return;
+
+        QPainter painter(this);
+        if (resizeMode == "fill") {
+            painter.drawPixmap(area, image);
+            return;
+        }
+
+        const Qt::AspectRatioMode aspectMode =
+            resizeMode == "cover"
+                ? Qt::KeepAspectRatioByExpanding
+                : Qt::KeepAspectRatio;
+        const QSize scaledSize = image.size().scaled(area.size(), aspectMode);
+        const QRect target(
+            area.center().x() - scaledSize.width() / 2,
+            area.center().y() - scaledSize.height() / 2,
+            scaledSize.width(),
+            scaledSize.height()
+        );
+        if (resizeMode == "cover") painter.setClipRect(area);
+        painter.drawPixmap(target, image);
+    }
+
+private:
+    QPixmap image;
+    QString resizeMode = "contain";
+};
+
 // Mengelola komunikasi antara runtime C++ Qt dan aplikasi JavaScript Node.js.
 class JuliaRuntime : public QObject
 {
 public:
     // Proses Node.js yang menjalankan kode JavaScript.
     QProcess *node;
+    QNetworkAccessManager *networkManager = nullptr;
 
     // Window utama aplikasi JuliaNative.
     QWidget *window;
@@ -665,6 +727,7 @@ public:
     JuliaRuntime()
     {
         node = new QProcess(this);
+        networkManager = new QNetworkAccessManager(this);
         window = new QWidget();
         // Memisahkan output stdout dan stderr Node.js.
         node->setProcessChannelMode(QProcess::SeparateChannels);
@@ -1326,6 +1389,177 @@ public:
     }
 #endif
 
+    QSize requestedImageSize(const QJsonObject &style) const
+    {
+        return QSize(
+            styleLengthPixels(style["width"]),
+            styleLengthPixels(style["height"])
+        );
+    }
+
+    QPixmap decodeImageData(
+        const QByteArray &data,
+        const QString &source,
+        const QSize &requestedSize
+    ) const
+    {
+        const QByteArray prefix = data.left(4096).trimmed().toLower();
+        const bool isSvg =
+            source.endsWith(".svg", Qt::CaseInsensitive) ||
+            prefix.contains("<svg");
+        if (!isSvg) {
+            QPixmap image;
+            image.loadFromData(data);
+            return image;
+        }
+
+        QSvgRenderer renderer(data);
+        if (!renderer.isValid()) return {};
+
+        QSize renderSize = renderer.defaultSize();
+        if (!renderSize.isValid() || renderSize.isEmpty()) {
+            renderSize = requestedSize.isValid() && !requestedSize.isEmpty()
+                ? requestedSize
+                : QSize(256, 256);
+        } else if (requestedSize.width() > 0 && requestedSize.height() > 0) {
+            renderSize = requestedSize;
+        } else if (requestedSize.width() > 0) {
+            renderSize.setHeight(qMax(
+                1,
+                qRound(
+                    requestedSize.width() *
+                    renderSize.height() /
+                    static_cast<double>(renderSize.width())
+                )
+            ));
+            renderSize.setWidth(requestedSize.width());
+        } else if (requestedSize.height() > 0) {
+            renderSize.setWidth(qMax(
+                1,
+                qRound(
+                    requestedSize.height() *
+                    renderSize.width() /
+                    static_cast<double>(renderSize.height())
+                )
+            ));
+            renderSize.setHeight(requestedSize.height());
+        }
+
+        renderSize = renderSize.scaled(4096, 4096, Qt::KeepAspectRatio);
+        QImage image(renderSize, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        renderer.render(
+            &painter,
+            QRectF(QPointF(0, 0), QSizeF(renderSize))
+        );
+        painter.end();
+        return QPixmap::fromImage(image);
+    }
+
+    void loadImageSource(
+        const QString &source,
+        const QSize &requestedSize,
+        std::function<void(const QPixmap &)> onLoaded
+    )
+    {
+        if (source.trimmed().isEmpty()) {
+            qWarning() << "Image requires a non-empty source.";
+            return;
+        }
+
+        const QUrl url(source);
+        const QString scheme = url.scheme().toLower();
+        if (scheme == "http" || scheme == "https") {
+            QNetworkRequest request(url);
+            request.setTransferTimeout(15000);
+            request.setAttribute(
+                QNetworkRequest::RedirectPolicyAttribute,
+                QNetworkRequest::NoLessSafeRedirectPolicy
+            );
+            QNetworkReply *reply = networkManager->get(request);
+            connect(reply, &QNetworkReply::finished, this,
+                [this, reply, source, requestedSize, onLoaded]() {
+                    if (reply->error() != QNetworkReply::NoError) {
+                        qWarning() << "Could not download image from"
+                                   << reply->url().host()
+                                   << reply->errorString();
+                        reply->deleteLater();
+                        return;
+                    }
+
+                    const QPixmap image = decodeImageData(
+                        reply->readAll(),
+                        source,
+                        requestedSize
+                    );
+                    reply->deleteLater();
+                    if (image.isNull()) {
+                        qWarning() << "Could not decode downloaded image.";
+                        return;
+                    }
+                    onLoaded(image);
+                }
+            );
+            return;
+        }
+
+        QString path;
+        if (url.isLocalFile()) {
+            path = url.toLocalFile();
+        } else if (QFileInfo(source).isAbsolute() ||
+                   source.startsWith(":/"))
+        {
+            path = source;
+        } else if (scheme.isEmpty()) {
+            path = QDir(workingDir).absoluteFilePath(source);
+        } else {
+            qWarning() << "Unsupported image source scheme:" << scheme;
+            return;
+        }
+
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly)) {
+            qWarning() << "Could not open image file:"
+                       << path << file.errorString();
+            return;
+        }
+
+        const QPixmap image = decodeImageData(
+            file.readAll(),
+            path,
+            requestedSize
+        );
+        if (image.isNull()) {
+            qWarning() << "Could not decode image file:" << path;
+            return;
+        }
+        onLoaded(image);
+    }
+
+    QWidget *createImage(const QJsonObject &props)
+    {
+        const QJsonObject style = props["style"].toObject();
+        auto *label = new NativeImageLabel();
+        label->setSizePolicy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Expanding
+        );
+        label->setAccessibleName(props["alt"].toString());
+        label->setResizeMode(props["resizeMode"].toString("contain"));
+        applyStyle(label, style);
+
+        QPointer<NativeImageLabel> safeLabel(label);
+        loadImageSource(
+            props["source"].toString(),
+            requestedImageSize(style),
+            [safeLabel](const QPixmap &image) {
+                if (safeLabel) safeLabel->setImage(image);
+            }
+        );
+        return label;
+    }
+
     QWidget *createNode(const QJsonObject &data)
     {
         QString type = data["type"].toString();
@@ -1344,6 +1578,10 @@ public:
             );
 
             return label;
+        }
+
+        if (type == "Image") {
+            return createImage(props);
         }
 
         if (type == "TextInput") {
@@ -1408,28 +1646,23 @@ public:
                 const QString imageSource =
                     props["imageSource"].toString();
                 if (!imageSource.isEmpty()) {
-                    const QIcon icon(imageSource);
-                    if (icon.isNull()) {
-                        qWarning() << "Could not load FAB image:"
-                                   << imageSource;
-                    } else {
-                        button->setIcon(icon);
-                        button->setText(QString());
-                        const QJsonObject style =
-                            props["style"].toObject();
-                        const int width = styleLengthPixels(
-                            style["width"],
-                            56
-                        );
-                        const int height = styleLengthPixels(
-                            style["height"],
-                            56
-                        );
-                        button->setIconSize(QSize(
-                            qMax(1, width - 20),
-                            qMax(1, height - 20)
-                        ));
-                    }
+                    const QJsonObject style = props["style"].toObject();
+                    const int width = styleLengthPixels(style["width"], 56);
+                    const int height = styleLengthPixels(style["height"], 56);
+                    QPointer<QPushButton> safeButton(button);
+                    loadImageSource(
+                        imageSource,
+                        QSize(qMax(1, width - 20), qMax(1, height - 20)),
+                        [safeButton, width, height](const QPixmap &image) {
+                            if (!safeButton) return;
+                            safeButton->setIcon(QIcon(image));
+                            safeButton->setText(QString());
+                            safeButton->setIconSize(QSize(
+                                qMax(1, width - 20),
+                                qMax(1, height - 20)
+                            ));
+                        }
+                    );
                 }
             }
 

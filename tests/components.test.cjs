@@ -4,6 +4,7 @@ const { test } = require("node:test");
 const { Card } = require("../app/build/app/core/components/Card.js");
 const { Column } = require("../app/build/app/core/components/Column.js");
 const { FlatList } = require("../app/build/app/core/components/FlatList.js");
+const { Image } = require("../app/build/app/core/components/Image.js");
 const {
   clearFloatingActionButtonCallbacks,
   dispatchFloatingActionButtonPress,
@@ -197,6 +198,32 @@ test("FloatingActionButton dispatches press callbacks and clears them", () => {
   clearFloatingActionButtonCallbacks();
   dispatchFloatingActionButtonPress(fab.events.click);
   assert.equal(presses, 1);
+});
+
+test("Image exposes source, alt text, resize mode, and style", () => {
+  const style = { width: 240, height: 120 };
+  const image = Image({
+    source: "https://example.com/image.svg",
+    alt: "Example image",
+    resizeMode: "cover",
+    style,
+  });
+
+  assert.equal(image.type, "Image");
+  assert.deepEqual(image.props, {
+    source: "https://example.com/image.svg",
+    alt: "Example image",
+    resizeMode: "cover",
+    style,
+  });
+});
+
+test("Image defaults to contain mode and an empty alt text", () => {
+  const image = Image({ source: "assets/photo.jpg" });
+
+  assert.equal(image.props.resizeMode, "contain");
+  assert.equal(image.props.alt, "");
+  assert.deepEqual(image.props.style, {});
 });
 
 test("Video exposes playback options and container style", () => {

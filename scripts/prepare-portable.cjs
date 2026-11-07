@@ -14,6 +14,7 @@ const cmakeCachePath = path.join(buildDir, "CMakeCache.txt");
 
 const sourceApp = path.join(buildDir, "app");
 const sourceSrc = path.join(buildDir, "src");
+const sourceAssets = path.join(root, "assets");
 
 function requirePath(file) {
   if (!fs.existsSync(file)) {
@@ -140,6 +141,12 @@ fs.copyFileSync(nodeSource, path.join(runtime, "node", "node.exe"));
 fs.cpSync(sourceSrc, path.join(runtime, "app", "src"), { recursive: true });
 
 fs.cpSync(sourceApp, path.join(runtime, "app", "app"), { recursive: true });
+
+if (fs.existsSync(sourceAssets) && fs.statSync(sourceAssets).isDirectory()) {
+  fs.cpSync(sourceAssets, path.join(runtime, "app", "assets"), {
+    recursive: true,
+  });
+}
 
 console.log("");
 console.log("JuliaNative portable berhasil dibuat.");

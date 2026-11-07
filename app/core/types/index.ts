@@ -3,6 +3,7 @@ export type ComponentType =
   | "Column"
   | "Row"
   | "Text"
+  | "Image"
   | "TextInput"
   | "Button"
   | "Video"
@@ -150,6 +151,13 @@ export interface TextProps {
 export interface ButtonProps {
   text: string;
   onClick?: () => void;
+  style?: StyleProps;
+}
+
+export interface ImageProps {
+  source: string;
+  alt?: string;
+  resizeMode?: "contain" | "cover" | "fill";
   style?: StyleProps;
 }
 

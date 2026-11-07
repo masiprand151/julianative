@@ -17,6 +17,8 @@ find_package(Qt6 REQUIRED COMPONENTS
     Core
     Gui
     Widgets
+    Network
+    Svg
     Multimedia
     MultimediaWidgets
 )
@@ -39,6 +41,8 @@ target_link_libraries(JuliaNative PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Network
+    Qt6::Svg
     Qt6::Multimedia
     Qt6::MultimediaWidgets
 )

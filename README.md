@@ -178,7 +178,8 @@ Card({
 window content. Place it directly in `Widget.body` so it floats above the
 regular layout. It defaults to the bottom-right corner; choose another corner
 with `placement` or adjust its distance from the edge with `margin`.
-Set `imageSource` to a local image path to use an image instead of the text icon.
+Set `imageSource` to a local image path or HTTP(S) URL to use an image instead
+of the text icon.
 
 ```ts
 FloatingActionButton({
@@ -187,6 +188,32 @@ FloatingActionButton({
   onPress: () => console.log("Add item"),
 });
 ```
+
+## Image
+
+`Image` displays local image files or downloads them from an HTTP(S) URL. Local
+relative paths are resolved from the app's working directory. PNG, JPG/JPEG, and
+SVG are supported. Local images also work without an internet connection;
+remote images require a connection when they are loaded.
+For portable builds, put relative-path files in the project's `assets/`
+directory; `npm run prepare:portable` copies it into the runtime.
+
+```ts
+Image({
+  source: "assets/logo.svg",
+  alt: "JuliaNative logo",
+  resizeMode: "contain",
+  style: { width: 160, height: 100 },
+});
+
+Image({
+  source: "https://example.com/photo.jpg",
+  resizeMode: "cover",
+  style: { width: 320, height: 200 },
+});
+```
+
+`resizeMode` accepts `contain` (default), `cover`, or `fill`.
 
 ## Video
 
