@@ -1,11 +1,17 @@
-import { useState } from "./state";
+import { useState, withStateScope } from "./state";
 import { Button } from "./components/Button";
 import { Column } from "./components/Column";
 import { Row } from "./components/Row";
 import { Text } from "./components/Text";
+import { View } from "./components/View";
 import { StyleProps, VNode } from "./types";
 
 export type StackParamList = Record<string, object | undefined>;
+
+type RouteParams<ParamList extends StackParamList, Name extends keyof ParamList> =
+  undefined extends ParamList[Name]
+    ? [params?: ParamList[Name]]
+    : [params: ParamList[Name]];
 
 export interface StackRoute<
   ParamList extends StackParamList,
@@ -13,21 +19,21 @@ export interface StackRoute<
 > {
   key: string;
   name: Name;
-  params?: ParamList[Name];
+  params: ParamList[Name];
 }
 
 export interface StackNavigation<ParamList extends StackParamList> {
   navigate<Name extends keyof ParamList>(
     name: Name,
-    params?: ParamList[Name],
+    ...params: RouteParams<ParamList, Name>
   ): void;
   push<Name extends keyof ParamList>(
     name: Name,
-    params?: ParamList[Name],
+    ...params: RouteParams<ParamList, Name>
   ): void;
   replace<Name extends keyof ParamList>(
     name: Name,
-    params?: ParamList[Name],
+    ...params: RouteParams<ParamList, Name>
   ): void;
   goBack(): void;
   popToTop(): void;
@@ -42,9 +48,25 @@ export interface StackScreenProps<
   route: StackRoute<ParamList, Name>;
 }
 
-export interface StackScreenOptions {
+export interface StackHeaderProps<
+  ParamList extends StackParamList,
+  Name extends keyof ParamList = keyof ParamList,
+> {
+  navigation: StackNavigation<ParamList>;
+  route: StackRoute<ParamList, Name>;
+  title: string;
+  canGoBack: boolean;
+}
+
+export interface StackScreenOptions<
+  ParamList extends StackParamList = StackParamList,
+> {
   title?: string;
   headerShown?: boolean;
+  headerStyle?: StyleProps;
+  headerComponent?: (
+    props: StackHeaderProps<ParamList>,
+  ) => VNode;
 }
 
 export interface StackNavigatorProps<
@@ -57,24 +79,40 @@ export interface StackNavigatorProps<
       component: (
         props: StackScreenProps<ParamList, RouteName>,
       ) => VNode;
-      options?: StackScreenOptions;
+      options?: StackScreenOptions<ParamList>;
     };
   };
-  screenOptions?: StackScreenOptions;
+  screenOptions?: StackScreenOptions<ParamList>;
   headerStyle?: StyleProps;
 }
 
 let routeKey = 0;
+let navigatorKey = 0;
 
-function createRoute<ParamList extends StackParamList, Name extends keyof ParamList>(
+function createRoute<
+  ParamList extends StackParamList,
+  Name extends keyof ParamList,
+>(
   name: Name,
-  params?: ParamList[Name],
+  params?: ParamList[Name]
 ): StackRoute<ParamList, Name> {
-  return { key: `stack_route_${++routeKey}`, name, params };
+  return {
+    key: `stack_route_${++routeKey}`,
+    name,
+    params: params as ParamList[Name],
+  };
 }
 
 export function createStackNavigator<ParamList extends StackParamList>() {
+  const stateScopeKey = `stack_navigator_${++navigatorKey}`;
+
   function Navigator<Name extends keyof ParamList>(
+    props: StackNavigatorProps<ParamList, Name>,
+  ): VNode {
+    return withStateScope(stateScopeKey, () => renderNavigator(props));
+  }
+
+  function renderNavigator<Name extends keyof ParamList>(
     props: StackNavigatorProps<ParamList, Name>,
   ): VNode {
     const [routes, setRoutes] = useState<StackRoute<ParamList>[]>(() => [
@@ -83,7 +121,11 @@ export function createStackNavigator<ParamList extends StackParamList>() {
     const activeRoute = routes[routes.length - 1];
 
     const navigation: StackNavigation<ParamList> = {
-      navigate(name, params) {
+      navigate<Name extends keyof ParamList>(
+        name: Name,
+        ...args: RouteParams<ParamList, Name>
+      ) {
+        const params = args[0];
         setRoutes((current) => {
           const existingIndex = current.findIndex(
             (route) => route.name === name,
@@ -104,10 +146,18 @@ export function createStackNavigator<ParamList extends StackParamList>() {
           return [...current.slice(0, existingIndex), activeRoute];
         });
       },
-      push(name, params) {
+      push<Name extends keyof ParamList>(
+        name: Name,
+        ...args: RouteParams<ParamList, Name>
+      ) {
+        const params = args[0];
         setRoutes((current) => [...current, createRoute(name, params)]);
       },
-      replace(name, params) {
+      replace<Name extends keyof ParamList>(
+        name: Name,
+        ...args: RouteParams<ParamList, Name>
+      ) {
+        const params = args[0];
         setRoutes((current) => [
           ...current.slice(0, -1),
           createRoute(name, params),
@@ -128,42 +178,73 @@ export function createStackNavigator<ParamList extends StackParamList>() {
 
     const screen = props.screens[activeRoute.name];
     const options = { ...props.screenOptions, ...screen.options };
+    const headerStyle = {
+      ...props.headerStyle,
+      ...options.headerStyle,
+    };
     const children: VNode[] = [];
 
     if (options.headerShown !== false) {
-      children.push(
-        Row({
-          style: {
-            gap: 8,
-            alignItems: "center",
-            padding: 10,
-            backgroundColor: "#ffffff",
-            borderRadius: 6,
-            ...props.headerStyle,
-          },
-          children: [
-            ...(navigation.canGoBack()
-              ? [
-                  Button({
-                    text: "‹",
-                    onClick: navigation.goBack,
-                    style: { cursor: "pointer" },
-                  }),
-                ]
-              : []),
-            Text(options.title ?? String(activeRoute.name), {
-              style: { fontWeight: "bold" },
-            }),
-          ],
-        }),
-      );
+      const title = options.title ?? String(activeRoute.name);
+      if (options.headerComponent) {
+        children.push(
+          View({
+            style: headerStyle,
+            children: [
+              withStateScope(`${activeRoute.key}:header`, () =>
+                options.headerComponent!({
+                  navigation,
+                  route: activeRoute as StackRoute<
+                    ParamList,
+                    typeof activeRoute.name
+                  >,
+                  title,
+                  canGoBack: navigation.canGoBack(),
+                }),
+              ),
+            ],
+          }),
+        );
+      } else {
+        children.push(
+          Row({
+            style: {
+              gap: 8,
+              alignItems: "center",
+              padding: 10,
+              backgroundColor: "#ffffff",
+              borderRadius: 6,
+              ...headerStyle,
+            },
+            children: [
+              ...(navigation.canGoBack()
+                ? [
+                    Button({
+                      text: "‹",
+                      onClick: navigation.goBack,
+                      style: { cursor: "pointer" },
+                    }),
+                  ]
+                : []),
+              Text(title, {
+                style: { fontWeight: "bold" },
+              }),
+            ],
+          }),
+        );
+      }
     }
 
     children.push(
-      screen.component({
-        navigation,
-        route: activeRoute as StackRoute<ParamList, typeof activeRoute.name>,
-      }),
+      withStateScope(activeRoute.key, () =>
+        screen.component({
+          navigation,
+          route: activeRoute as StackRoute<
+            ParamList,
+            typeof activeRoute.name
+          >,
+        }),
+      ),
     );
 
     return Column({

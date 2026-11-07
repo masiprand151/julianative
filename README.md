@@ -64,7 +64,8 @@ function Main() {
 
 Keep the app's single `Widget` in `Main` and render a `Stack.Navigator` inside
 its body. Each screen receives `navigation` and `route` props. The navigator
-provides a header with a back button and title by default.
+provides a header with a back button and title by default. Customize the
+built-in header with `headerStyle`, or replace it with `headerComponent`.
 
 ```ts
 type AppStack = {
@@ -86,7 +87,8 @@ function Main() {
             component: ({ navigation }) =>
               Button({
                 text: "Lihat detail",
-                onClick: () => navigation.push("Details", { itemId: 42 }),
+                onClick: () =>
+                  navigation.navigate("Details", { itemId: 42 }),
               }),
           },
           Details: {
@@ -100,10 +102,45 @@ function Main() {
 }
 ```
 
-`push` always adds a screen to the stack. `navigate` opens a screen or returns
-to it if it is already in the stack. `goBack`, `replace`, and `popToTop` provide
-the other common stack actions. `screenOptions` sets defaults for screen
-headers; a screen can override `title` or set `headerShown: false`.
+`navigate` takes the destination route and, when needed, a typed params object.
+Read the data in the destination screen from `route.params`. Routes already in
+the stack are brought to the top; otherwise, the destination is pushed.
+`push`, `goBack`, `replace`, and `popToTop` are available for explicit stack
+control. `screenOptions` sets defaults for screen headers; a screen can
+override `title` or set `headerShown: false`.
+
+```ts
+const Stack = createStackNavigator<AppStack>();
+
+function AppHeader({ navigation, title, canGoBack }) {
+  return Row({
+    style: { gap: 12, padding: 10, backgroundColor: "#193b35" },
+    children: [
+      ...(canGoBack
+        ? [Button({ text: "Back", onClick: navigation.goBack })]
+        : []),
+      Text(title, { style: { color: "#fff", fontWeight: "bold" } }),
+    ],
+  });
+}
+
+Stack.Navigator({
+  initialRouteName: "Home",
+  screenOptions: {
+    headerComponent: AppHeader,
+    headerStyle: { padding: 6, backgroundColor: "#dce9e5" },
+  },
+  screens: { /* screens */ },
+});
+```
+
+The custom header receives `navigation`, `route`, `title`, and `canGoBack`.
+Set `headerComponent` in `screenOptions` for every screen, or in one screen's
+`options` to customize that screen only. `headerStyle` styles the container
+around a custom header and also overrides the built-in header's default style.
+For larger apps, keep the navigator and `Widget` in `src/main.ts`, define the
+route params in `src/navigation/types.ts`, and export each screen from its own
+file under `src/screens/`.
 
 ## StyleSheet
 
