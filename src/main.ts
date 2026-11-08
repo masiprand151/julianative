@@ -1,11 +1,11 @@
 import { Application, useState } from "@julia/core";
-import { Button, Card, Column, Text, Widget } from "@julia/core/components";
+import { Button, Builder, Card, Column, Text } from "@julia/core/components";
 import { styles } from "./styles";
 
 function Main() {
   const [count, setCount] = useState(0);
 
-  return Widget({
+  return Builder({
     title: "JuliaNative",
     width: 520,
     height: 380,

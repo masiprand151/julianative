@@ -66,3 +66,5 @@ export function Widget(props: WidgetProps): VNode {
     children: props.body,
   };
 }
+
+export const Builder = Widget;

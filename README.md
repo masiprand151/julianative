@@ -21,9 +21,9 @@ to TypeScript files under `src` or `app/core` rebuild the UI and restart only
 the Node.js renderer; the native window stays open and refreshes in place.
 Changes to native C++ files require a manual rebuild and app restart.
 
-## Widget Window Options
+## Builder Window Options
 
-`Widget` supports window position, resizing, fullscreen, hiding the title bar,
+`Builder` supports window position, resizing, fullscreen, hiding the title bar,
 always-on-top, and optional content scrolling. Fullscreen uses the native
 fullscreen mode, which hides the title bar; `hideTitleBar` independently hides
 the title bar while the window is not fullscreen. Its `onClose`, `onResize`,
@@ -34,7 +34,7 @@ Named positions use the available screen area. If omitted, the current default
 position is retained.
 
 ```ts
-Widget({
+Builder({
   title: "My app",
   position: { x: 100, y: 100 },
   resizable: true,
@@ -106,7 +106,7 @@ when one of its values changes.
 
 ## Stack Navigation
 
-Keep the app's single `Widget` in `Main` and render a `Stack.Navigator` inside
+Keep the app's single `Builder` in `Main` and render a `Stack.Navigator` inside
 its body. Each screen receives `navigation` and `route` props. The navigator
 provides a header with a back button and title by default. Customize the
 built-in header with `headerStyle`, or replace it with `headerComponent`.
@@ -120,7 +120,7 @@ type AppStack = {
 const Stack = createStackNavigator<AppStack>();
 
 function Main() {
-  return Widget({
+  return Builder({
     title: "My app",
     body: [
       Stack.Navigator({
@@ -182,7 +182,7 @@ The custom header receives `navigation`, `route`, `title`, and `canGoBack`.
 Set `headerComponent` in `screenOptions` for every screen, or in one screen's
 `options` to customize that screen only. `headerStyle` styles the container
 around a custom header and also overrides the built-in header's default style.
-For larger apps, keep the navigator and `Widget` in `src/main.ts`, define route
+For larger apps, keep the navigator and `Builder` in `src/main.ts`, define route
 params in a dedicated type module, and export each screen from its own file.
 
 ## StyleSheet
@@ -341,7 +341,7 @@ Card({
 ## FloatingActionButton
 
 `FloatingActionButton` is a circular native action button anchored over the
-window content. Place it directly in `Widget.body` so it floats above the
+window content. Place it directly in `Builder.body` so it floats above the
 regular layout. It defaults to the bottom-right corner; choose another corner
 with `placement` or adjust its distance from the edge with `margin`.
 Set `imageSource` to a local image path or HTTP(S) URL to use an image instead

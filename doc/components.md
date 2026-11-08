@@ -8,6 +8,7 @@ Import komponen:
 ```ts
 import {
   Button,
+  Builder,
   Card,
   Column,
   FlatList,
@@ -21,13 +22,12 @@ import {
   TextInput,
   Video,
   View,
-  Widget,
 } from "@julia/core/components";
 ```
 
 ## Window dan layout
 
-### `Widget`
+### `Builder`
 
 Membuat window aplikasi dan menerima `body` berupa daftar VNode.
 
@@ -40,7 +40,7 @@ Properti utama:
 - `style` dan `body`.
 
 ```ts
-Widget({
+Builder({
   title: "Catatan",
   width: 720,
   height: 480,
@@ -59,7 +59,7 @@ Jika `position` tidak diisi, window memakai posisi default dekat kiri atas.
 Pada mode fullscreen, posisi diabaikan. Untuk memusatkan window:
 
 ```ts
-Widget({
+Builder({
   width: 720,
   height: 480,
   position: "center",
@@ -180,7 +180,7 @@ TextInput({
 
 ### `FloatingActionButton`
 
-Tombol mengambang di atas konten window. Letakkan langsung di `Widget.body`.
+Tombol mengambang di atas konten window. Letakkan langsung di `Builder.body`.
 `placement` dapat berupa `top-left`, `top-right`, `bottom-left`, atau
 `bottom-right`. `margin` mengatur jaraknya dari tepi.
 

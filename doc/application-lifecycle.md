@@ -3,15 +3,15 @@
 ## Entry point
 
 Entry point proyek berada di `src/main.ts`. Fungsi utama membuat satu VNode
-`Widget`, lalu `Application.run` memulai renderer dan mendengarkan event dari
+`Builder`, lalu `Application.run` memulai renderer dan mendengarkan event dari
 runtime native:
 
 ```ts
 import { Application } from "@julia/core";
-import { Text, Widget } from "@julia/core/components";
+import { Builder, Text } from "@julia/core/components";
 
 function Main() {
-  return Widget({
+  return Builder({
     title: "Aplikasi saya",
     body: [Text("Siap digunakan")],
   });
@@ -28,7 +28,7 @@ memanggil fungsi itu lagi saat state berubah.
 ### `Application.run(main)`
 
 Memulai proses UI. `main` adalah fungsi yang mengembalikan VNode root, biasanya
-`Widget`. Panggil sekali dari entry point.
+`Builder`. Panggil sekali dari entry point.
 
 ### `Application.exit()`
 
@@ -49,10 +49,10 @@ sedang mengembangkan bridge native.
 
 ## Event window
 
-Callback dipasang pada `Widget`:
+Callback dipasang pada `Builder`:
 
 ```ts
-Widget({
+Builder({
   onClose: () => console.log("Window ditutup"),
   onResize: (width, height) =>
     console.log(`Ukuran: ${width} x ${height}`),

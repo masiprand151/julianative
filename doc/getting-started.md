@@ -70,10 +70,10 @@ penyimpanan.
 
 ```ts
 import { Application } from "@julia/core";
-import { Button, Text, View, Widget } from "@julia/core/components";
+import { Builder, Button, Text, View } from "@julia/core/components";
 
 function Main() {
-  return Widget({
+  return Builder({
     title: "Aplikasi pertama",
     width: 480,
     height: 320,
@@ -92,5 +92,5 @@ function Main() {
 Application.run(Main);
 ```
 
-`Widget` adalah jendela utama aplikasi. Komponen lain di `body` menjadi isi
+`Builder` adalah jendela utama aplikasi. Komponen lain di `body` menjadi isi
 jendela tersebut.

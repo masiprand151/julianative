@@ -19,7 +19,7 @@ Berikut bagian proyek yang paling sering disentuh saat mengembangkan aplikasi.
 
 ## Alur render UI
 
-1. Fungsi aplikasi seperti `Main()` membuat VNode melalui `Widget`, `View`,
+1. Fungsi aplikasi seperti `Main()` membuat VNode melalui `Builder`, `View`,
    `Text`, dan komponen lainnya.
 2. `Application.run(Main)` memulai proses render.
 3. Renderer TypeScript menyerialisasi VNode ke JSON dan mengirimkannya ke

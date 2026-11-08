@@ -104,7 +104,7 @@ type AppRoutes = {
 const Stack = createStackNavigator<AppRoutes>();
 ```
 
-Buat navigator di dalam `Widget.body`:
+Buat navigator di dalam `Builder.body`:
 
 ```ts
 Stack.Navigator({
