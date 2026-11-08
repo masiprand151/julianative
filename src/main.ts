@@ -1,12 +1,5 @@
 import { Application, useState } from "@julia/core";
-import {
-  Button,
-  Card,
-  Column,
-  Grid,
-  Text,
-  Widget,
-} from "@julia/core/components";
+import { Button, Card, Column, Text, Widget } from "@julia/core/components";
 import { styles } from "./styles";
 
 function Main() {

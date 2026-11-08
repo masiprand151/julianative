@@ -61,6 +61,10 @@ Perintah ini membangun aplikasi dan menjalankan skrip persiapan portable.
 Distribusi desktop Qt biasanya berisi executable, runtime Node, modul Qt, dan
 DLL pendukung. DLL tersebut adalah dependency native yang dibutuhkan aplikasi,
 bukan file sementara yang dapat dihapus begitu saja.
+Nama executable di folder `portable/` mengikuti properti `name` dalam
+`package.json` (misalnya `julianative.exe`).
+Paket juga menyertakan `qt.conf` agar Qt mencari platform plugin dari folder
+`portable/plugins` saat executable dijalankan.
 
 File aset dengan path relatif, seperti `assets/logo.svg`, perlu disertakan pada
 paket portable. Skrip persiapan portable menyalin folder `assets` ke runtime

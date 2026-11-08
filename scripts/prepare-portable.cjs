@@ -3,6 +3,16 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
+const packageJson = JSON.parse(
+  fs.readFileSync(path.join(root, "package.json"), "utf8"),
+);
+const appName = packageJson.name;
+if (typeof appName !== "string" || !/^[a-zA-Z0-9._-]+$/.test(appName)) {
+  throw new Error(
+    "package.json name must contain only letters, numbers, dots, underscores, and hyphens for the portable executable.",
+  );
+}
+const portableExecutableName = `${appName}.exe`;
 
 const portable = path.join(root, "portable");
 const runtime = path.join(portable, "runtime");
@@ -70,7 +80,8 @@ fs.mkdirSync(path.join(runtime, "app"), {
 });
 
 // Salin executable Qt.
-fs.copyFileSync(executable, path.join(portable, "JuliaNative.exe"));
+const portableExecutable = path.join(portable, portableExecutableName);
+fs.copyFileSync(executable, portableExecutable);
 
 execFileSync(
   qtDeployTool,
@@ -85,9 +96,15 @@ execFileSync(
     portable,
     "--plugindir",
     path.join(portable, "plugins"),
-    path.join(portable, "JuliaNative.exe"),
+    portableExecutable,
   ],
   { stdio: "inherit" },
+);
+
+requirePath(path.join(portable, "plugins", "platforms", "qwindows.dll"));
+fs.writeFileSync(
+  path.join(portable, "qt.conf"),
+  "[Paths]\nPrefix = .\nPlugins = plugins\n",
 );
 
 const msysRoot = path.resolve(qtRoot, "..");
@@ -100,7 +117,7 @@ const dependencySearchPath = [
   process.env.PATH ?? "",
 ].join(path.delimiter);
 const packagedBinaries = [
-  path.join(portable, "JuliaNative.exe"),
+  portableExecutable,
   ...findDllFiles(portable),
 ];
 const runtimeDependencies = new Map();
@@ -149,6 +166,7 @@ if (fs.existsSync(sourceAssets) && fs.statSync(sourceAssets).isDirectory()) {
 }
 
 console.log("");
-console.log("JuliaNative portable berhasil dibuat.");
+console.log(`${appName} portable berhasil dibuat.`);
+console.log(`Executable: ${portableExecutableName}`);
 console.log(`Lokasi: ${portable}`);
 console.log("");
