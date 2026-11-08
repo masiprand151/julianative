@@ -58,6 +58,10 @@ JuliaRuntime::JuliaRuntime()
                         }
                     } else if (type == "patch") {
                         applyLeafPatches(message);
+                    } else if (type == "listPatch") {
+                        applyVirtualListPatches(message);
+                    } else if (type == "storageRequest") {
+                        handleStorageRequest(message);
                     }
                     // Pesan untuk render UI
                     else {
@@ -77,6 +81,123 @@ JuliaRuntime::JuliaRuntime()
 }
 
 // Menjalankan Node.js dan menentukan lokasi file JavaScript.
+void JuliaRuntime::handleStorageRequest(const QJsonObject &message)
+{
+    const QString requestId = message["requestId"].toString();
+    if (requestId.isEmpty()) {
+        qWarning() << "Ignoring local storage request without a request ID.";
+        return;
+    }
+
+    QJsonObject response;
+    response["type"] = "storageResponse";
+    response["requestId"] = requestId;
+
+    const QString directory =
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (directory.isEmpty()) {
+        response["success"] = false;
+        response["error"] = "Could not determine the application data directory.";
+    } else {
+        const QString filePath =
+            QDir(directory).filePath("local-storage.json");
+        QJsonObject storage;
+        QFile source(filePath);
+        bool requestFailed = false;
+
+        if (source.exists()) {
+            if (!source.open(QIODevice::ReadOnly)) {
+                response["success"] = false;
+                response["error"] = source.errorString();
+                requestFailed = true;
+            } else {
+                QJsonParseError parseError;
+                const QJsonDocument document =
+                    QJsonDocument::fromJson(source.readAll(), &parseError);
+                if (parseError.error != QJsonParseError::NoError ||
+                    !document.isObject())
+                {
+                    response["success"] = false;
+                    response["error"] =
+                        "The local storage file is not a valid JSON object.";
+                    requestFailed = true;
+                } else {
+                    storage = document.object();
+                }
+            }
+        }
+
+        const QString operation = message["operation"].toString();
+        const QString key = message["key"].toString();
+        bool shouldSave = false;
+        if (!requestFailed && operation == "get") {
+            if (!message.contains("key")) {
+                response["success"] = false;
+                response["error"] = "Local storage get requires a key.";
+            } else {
+                const bool found = storage.contains(key);
+                response["success"] = true;
+                response["found"] = found;
+                if (found) response["value"] = storage.value(key);
+            }
+        } else if (!requestFailed && operation == "set") {
+            if (!message.contains("key") || !message.contains("value")) {
+                response["success"] = false;
+                response["error"] =
+                    "Local storage set requires a key and JSON value.";
+            } else {
+                storage.insert(key, message["value"]);
+                shouldSave = true;
+            }
+        } else if (!requestFailed && operation == "remove") {
+            if (!message.contains("key")) {
+                response["success"] = false;
+                response["error"] = "Local storage remove requires a key.";
+            } else {
+                storage.remove(key);
+                shouldSave = true;
+            }
+        } else if (!requestFailed && operation == "clear") {
+            storage = QJsonObject();
+            shouldSave = true;
+        } else if (!requestFailed) {
+            response["success"] = false;
+            response["error"] = "Unsupported local storage operation.";
+        }
+
+        if (!requestFailed && shouldSave) {
+            if (!QDir().mkpath(directory)) {
+                response["success"] = false;
+                response["error"] =
+                    "Could not create the application data directory.";
+            } else {
+                QSaveFile destination(filePath);
+                if (!destination.open(QIODevice::WriteOnly)) {
+                    response["success"] = false;
+                    response["error"] = destination.errorString();
+                } else {
+                    const QByteArray contents =
+                        QJsonDocument(storage).toJson(QJsonDocument::Indented);
+                    if (destination.write(contents) != contents.size()) {
+                        response["success"] = false;
+                        response["error"] = destination.errorString();
+                        destination.cancelWriting();
+                    } else if (!destination.commit()) {
+                        response["success"] = false;
+                        response["error"] = destination.errorString();
+                    } else {
+                        response["success"] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    node->write(
+        QJsonDocument(response).toJson(QJsonDocument::Compact) + "\n"
+    );
+}
+
 void JuliaRuntime::start(bool developmentMode)
 {
     // Mengambil lokasi folder tempat executable JuliaNative berada.
@@ -239,6 +360,14 @@ void JuliaRuntime::restartNode()
 
 bool JuliaRuntime::eventFilter(QObject *watched, QEvent *event)
 {
+    if (auto *viewport = qobject_cast<QWidget *>(watched)) {
+        if (event->type() == QEvent::Resize &&
+            !viewport->property("juliaVirtualListNodeId").toString().isEmpty())
+        {
+            sendVirtualListViewport(viewport);
+        }
+    }
+
         if (auto *viewport = qobject_cast<QWidget *>(watched)) {
             if (event->type() == QEvent::MouseButtonPress) {
                 viewport->setProperty("juliaResizeInProgress", true);
@@ -488,4 +617,3 @@ JuliaRuntime::~JuliaRuntime()
     // Menghapus window utama.
     delete window;
 }
-

@@ -69,11 +69,12 @@ test("Text converts values and lets styles override presentation props", () => {
 
 test("Column and Row pass children and layout styles through", () => {
   const child = { type: "Text", props: { text: "Child" } };
-  const column = Column({ spacing: 4, padding: 8, children: [child] });
+  const padding = { top: 4, right: 8, bottom: 12, left: 16 };
+  const column = Column({ spacing: 4, padding, children: [child] });
   const row = Row({ style: { gap: 6, padding: 10 }, children: [child] });
 
   assert.equal(column.props.spacing, 4);
-  assert.equal(column.props.padding, 8);
+  assert.deepEqual(column.props.padding, padding);
   assert.equal(column.children[0], child);
   assert.equal(row.props.spacing, 6);
   assert.equal(row.props.padding, 10);
@@ -92,34 +93,31 @@ test("View defaults to a column and exposes scroll configuration", () => {
   assert.equal(view.props.scrollDirection, "horizontal");
 });
 
-test("FlatList renders data with indices and separators in a scrollable View", () => {
-  const separatorItems = [];
+test("FlatList stores data and render callbacks for the native virtual renderer", () => {
+  const data = ["Ada", "Grace", "Katherine"];
+  const renderItem = ({ item, index }) => Text(`${index}:${item}`);
+  const ItemSeparatorComponent = ({ leadingItem, trailingItem }) =>
+    View({ children: [Text(`${leadingItem}-${trailingItem}`)] });
   const list = FlatList({
-    data: ["Ada", "Grace", "Katherine"],
-    renderItem: ({ item, index }) => Text(`${index}:${item}`),
-    ItemSeparatorComponent: ({ leadingItem, trailingItem }) => {
-      separatorItems.push([leadingItem, trailingItem]);
-      return View({});
-    },
+    data,
+    renderItem,
+    ItemSeparatorComponent,
     style: { height: 200 },
     contentContainerStyle: { padding: 12 },
+    keyExtractor: (item) => item,
+    estimatedItemSize: 44,
+    initialNumToRender: 5,
   });
 
-  assert.equal(list.type, "View");
-  assert.equal(list.props.scrollable, true);
-  assert.equal(list.props.scrollDirection, "vertical");
+  assert.equal(list.type, "FlatList");
+  assert.equal(list.props.data, data);
+  assert.equal(list.props.renderItem, renderItem);
+  assert.equal(list.props.ItemSeparatorComponent, ItemSeparatorComponent);
+  assert.equal(list.props.keyExtractor("Ada", 0), "Ada");
+  assert.equal(list.props.estimatedItemSize, 44);
+  assert.equal(list.props.initialNumToRender, 5);
   assert.equal(list.props.style.height, 200);
-  assert.equal(list.children[0].props.style.padding, 12);
-  assert.deepEqual(
-    list.children[0].children.map((child) =>
-      child.type === "Text" ? child.props.text : "separator",
-    ),
-    ["0:Ada", "separator", "1:Grace", "separator", "2:Katherine"],
-  );
-  assert.deepEqual(separatorItems, [
-    ["Ada", "Grace"],
-    ["Grace", "Katherine"],
-  ]);
+  assert.equal(list.props.contentContainerStyle.padding, 12);
 });
 
 test("FlatList supports horizontal lists and disabling scrolling", () => {
@@ -130,10 +128,8 @@ test("FlatList supports horizontal lists and disabling scrolling", () => {
     renderItem: ({ item }) => Text(item),
   });
 
-  assert.equal(list.props.direction, "row");
-  assert.equal(list.props.scrollDirection, "horizontal");
-  assert.equal(list.props.scrollable, false);
-  assert.equal(list.children[0].props.direction, "row");
+  assert.equal(list.props.horizontal, true);
+  assert.equal(list.props.scrollEnabled, false);
 });
 
 test("FlatList renders an empty-state component for empty data", () => {
@@ -144,8 +140,7 @@ test("FlatList renders an empty-state component for empty data", () => {
     ListEmptyComponent: emptyState,
   });
 
-  assert.equal(list.children[0].children.length, 1);
-  assert.equal(list.children[0].children[0], emptyState);
+  assert.equal(list.props.ListEmptyComponent, emptyState);
 });
 
 test("FloatingActionButton creates a positioned native action node", () => {

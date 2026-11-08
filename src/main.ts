@@ -9,6 +9,19 @@ import { RootStackParamList } from "./navigation/types";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
+const windowStyle = {
+  padding: 18,
+  gap: 12,
+  backgroundColor: "#f5f7f6",
+};
+
+const headerStyle = {
+  margin: 6,
+  padding: 6,
+  backgroundColor: "#dce9e5",
+  borderRadius: 10,
+};
+
 function Main() {
   const [count, setCount] = useState(0);
   const [email, setEmail] = useState("");
@@ -18,31 +31,18 @@ function Main() {
     title: "Style Test",
     width: 1024,
     height: 768,
-    position: { x: 0, y: 0 },
-    fullscreen: false,
-    resizable: true,
-    hideTitleBar: false,
-    alwaysOnTop: false,
     onClose: () => console.log("Window closed"),
     onResize: (width, height) =>
       console.log(`Window resized: ${width}x${height}`),
     onMaximize: () => console.log("Window maximized"),
     onMinimize: () => console.log("Window minimized"),
-    style: {
-      padding: 18,
-      gap: 12,
-      backgroundColor: "#f5f7f6",
-    },
+    style: windowStyle,
     body: [
       Stack.Navigator({
         initialRouteName: "Home",
         screenOptions: {
           headerComponent: AppHeader,
-          headerStyle: {
-            padding: 6,
-            backgroundColor: "#dce9e5",
-            borderRadius: 10,
-          },
+          headerStyle,
         },
         screens: {
           Home: {
@@ -50,12 +50,14 @@ function Main() {
             component: ({ navigation }) =>
               HomeScreen({
                 navigation,
-                count,
-                setCount,
-                email,
-                setEmail,
-                modalVisible,
-                setModalVisible,
+                state: {
+                  count,
+                  setCount,
+                  email,
+                  setEmail,
+                  modalVisible,
+                  setModalVisible,
+                },
               }),
           },
           Profile: {

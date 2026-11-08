@@ -6,7 +6,7 @@
   "scripts": {
     "build:ts": "tsc && tsc-alias -p tsconfig.json",
     "check:ts": "tsc --noEmit",
-    "test": "npm run build:ts && node --test tests/components.test.cjs tests/navigation.test.cjs tests/renderer.test.cjs",
+    "test": "npm run build:ts && node --test tests/components.test.cjs tests/navigation.test.cjs tests/renderer.test.cjs tests/localStorage.test.cjs",
     "configure:app": "cmake -S . -B app/build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=C:/msys64/ucrt64/bin/gcc.exe -DCMAKE_CXX_COMPILER=C:/msys64/ucrt64/bin/g++.exe",
     "build:app": "npm run build:ts && npm run configure:app && cmake --build app/build",
     "app": "npm run build:app && bash -lc './app/build/JuliaNative.exe'",

@@ -9,6 +9,7 @@ export type ComponentType =
   | "Video"
   | "View"
   | "Card"
+  | "FlatList"
   | "FloatingActionButton"
   | "Modal"
   | "Table";
@@ -19,6 +20,7 @@ type ScrollDirection = "vertical" | "horizontal" | "auto";
 
 export interface VNode {
   type: ComponentType;
+  key?: string | number;
   props?: Record<string, any>;
   children?: VNode[];
   events?: EventMap;
@@ -49,8 +51,8 @@ export interface StyleProps {
   minHeight?: CSSLength;
   maxWidth?: CSSLength;
   maxHeight?: CSSLength;
-  margin?: CSSLength;
-  padding?: CSSLength;
+  margin?: CSSLength | BoxSpacing;
+  padding?: CSSLength | BoxSpacing;
   gap?: CSSLength;
   backgroundColor?: string;
   background?: string;
@@ -84,6 +86,13 @@ export type CSSLength =
   | `${number}em`
   | `${number}ex`
   | `${number}%`;
+
+export interface BoxSpacing {
+  top?: CSSLength;
+  right?: CSSLength;
+  bottom?: CSSLength;
+  left?: CSSLength;
+}
 
 export type CursorType =
   | "auto"
@@ -125,7 +134,7 @@ export type CursorType =
 
 export interface LayoutProps {
   spacing?: number;
-  padding?: number;
+  padding?: CSSLength | BoxSpacing;
   style?: ViewStyle;
   children?: VNode[];
 }
@@ -228,9 +237,13 @@ export interface FlatListSeparatorInfo<T> {
 export interface FlatListProps<T> {
   data: readonly T[];
   renderItem: (info: FlatListRenderItemInfo<T>) => VNode;
+  keyExtractor?: (item: T, index: number) => string | number;
   horizontal?: boolean;
   scrollDirection?: ScrollDirection;
   scrollEnabled?: boolean;
+  estimatedItemSize?: number;
+  initialNumToRender?: number;
+  overscan?: number;
   ItemSeparatorComponent?: (
     info: FlatListSeparatorInfo<T>,
   ) => VNode;

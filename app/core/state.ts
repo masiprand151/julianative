@@ -111,6 +111,10 @@ export function setStateRenderCallback(callback: () => void): void {
   renderCallback = callback;
 }
 
+export function requestRender(): void {
+  scheduleRender();
+}
+
 function scheduleRender(): void {
   if (renderScheduled) return;
   renderScheduled = true;

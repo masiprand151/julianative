@@ -8,6 +8,20 @@ QWidget *JuliaRuntime::createNode(const QJsonObject &data)
             "juliaNodeId",
             data["nodeId"].toString()
         );
+        widget->setProperty(
+            "juliaNodeType",
+            data["type"].toString()
+        );
+        const QJsonValue listIndex = data["props"].toObject()["listIndex"];
+        if (listIndex.isDouble()) {
+            widget->setProperty("juliaListIndex", listIndex.toInt());
+        }
+        widget->setProperty(
+            "juliaSerializedNode",
+            QString::fromUtf8(
+                QJsonDocument(data).toJson(QJsonDocument::Compact)
+            )
+        );
         if (data["type"].toString() == "FloatingActionButton") {
             const QJsonObject props = data["props"].toObject();
             widget->setParent(window);
@@ -33,6 +47,10 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
 
     QJsonObject props = data["props"].toObject();
     QJsonObject events = data["events"].toObject();
+
+    if (type == "FlatList") {
+        return createVirtualList(data);
+    }
 
     if (type == "Text") {
         QLabel *label = new QLabel(props["text"].toString());
@@ -183,6 +201,246 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
     }
 
     return nullptr;
+}
+
+QWidget *JuliaRuntime::createVirtualList(const QJsonObject &data)
+{
+    const QJsonObject props = data["props"].toObject();
+    const QJsonObject style = props["style"].toObject();
+    const bool horizontal =
+        props["direction"].toString() == "horizontal";
+    const bool scrollable = props["scrollable"].toBool(true);
+
+    auto *list = new QScrollArea();
+    list->setFrameShape(QFrame::NoFrame);
+    list->setWidgetResizable(true);
+    list->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Expanding
+    );
+    list->setHorizontalScrollBarPolicy(
+        scrollable && horizontal
+            ? Qt::ScrollBarAsNeeded
+            : Qt::ScrollBarAlwaysOff
+    );
+    list->setVerticalScrollBarPolicy(
+        scrollable && !horizontal
+            ? Qt::ScrollBarAsNeeded
+            : Qt::ScrollBarAlwaysOff
+    );
+    applyStyle(list, style);
+
+    updateVirtualList(list, data, false);
+    QWidget *viewport = list->viewport();
+    QScrollBar *scrollBar = horizontal
+        ? list->horizontalScrollBar()
+        : list->verticalScrollBar();
+    connect(scrollBar, &QScrollBar::valueChanged, this, [this, viewport](int) {
+        sendVirtualListViewport(viewport);
+    });
+    return list;
+}
+
+void JuliaRuntime::updateVirtualList(
+    QScrollArea *list,
+    const QJsonObject &data,
+    bool reuseItems
+)
+{
+    const QJsonObject props = data["props"].toObject();
+    const QJsonObject contentStyle =
+        props["contentContainerStyle"].toObject();
+    const bool horizontal =
+        props["direction"].toString() == "horizontal";
+    const int firstVisibleIndex =
+        qMax(0, props["firstVisibleIndex"].toInt());
+    const int totalCount = qMax(0, props["totalCount"].toInt());
+    const int visibleItemCount =
+        qMax(0, props["visibleItemCount"].toInt());
+    const int leadingExtent =
+        qMax(0, props["leadingExtent"].toInt());
+    const int trailingExtent =
+        qMax(0, props["trailingExtent"].toInt());
+    QScrollBar *scrollBar = horizontal
+        ? list->horizontalScrollBar()
+        : list->verticalScrollBar();
+    const QSignalBlocker scrollSignalBlocker(scrollBar);
+    QHash<QString, QWidget *> reusableItems;
+    if (QWidget *previousContent = list->takeWidget()) {
+        QLayout *previousLayout = previousContent->layout();
+        while (previousLayout && previousLayout->count() > 0) {
+            QLayoutItem *item = previousLayout->takeAt(0);
+            QWidget *widget = item->widget();
+            if (widget) {
+                if (reuseItems) {
+                    const QString nodeId =
+                        widget->property("juliaNodeId").toString();
+                    if (!nodeId.isEmpty()) reusableItems.insert(nodeId, widget);
+                }
+                widget->setParent(nullptr);
+            }
+            delete item;
+        }
+        delete previousContent;
+    }
+
+    auto *content = new QWidget(list);
+    content->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Expanding
+    );
+    applyStyle(content, contentStyle);
+
+    QBoxLayout *layout = horizontal
+        ? static_cast<QBoxLayout *>(new QHBoxLayout(content))
+        : static_cast<QBoxLayout *>(new QVBoxLayout(content));
+    const QMargins padding = styleBoxSpacing(
+        styleValue(contentStyle, "padding", "padding"),
+        0
+    );
+    const int spacing = qMax(
+        0,
+        styleLengthPixels(
+            styleValue(contentStyle, "gap", "gap"),
+            0
+        )
+    );
+    layout->setContentsMargins(padding);
+    layout->setSpacing(0);
+    if (leadingExtent > 0) layout->addSpacing(leadingExtent);
+    if (firstVisibleIndex > 0 && visibleItemCount > 0) {
+        layout->addSpacing(spacing);
+    }
+
+    const QJsonArray children = data["children"].toArray();
+    int addedChildren = 0;
+    for (const QJsonValue &child : children) {
+        const QJsonObject childData = child.toObject();
+        const QString nodeId = childData["nodeId"].toString();
+        QWidget *widget = reusableItems.take(nodeId);
+        const QString serializedNode = QString::fromUtf8(
+            QJsonDocument(childData).toJson(QJsonDocument::Compact)
+        );
+        if (widget &&
+            widget->property("juliaSerializedNode").toString() !=
+                serializedNode)
+        {
+            delete widget;
+            widget = nullptr;
+        }
+        if (!widget) {
+            widget = createNode(childData);
+        } else {
+            widget->setParent(content);
+        }
+        if (widget) {
+            QSizePolicy sizePolicy = widget->sizePolicy();
+            if (horizontal) {
+                sizePolicy.setHorizontalPolicy(QSizePolicy::Preferred);
+            } else {
+                sizePolicy.setVerticalPolicy(QSizePolicy::Preferred);
+            }
+            widget->setSizePolicy(sizePolicy);
+            if (addedChildren > 0) layout->addSpacing(spacing);
+            layout->addWidget(widget);
+            addedChildren++;
+        }
+    }
+    qDeleteAll(reusableItems);
+
+    if (firstVisibleIndex + visibleItemCount < totalCount &&
+        visibleItemCount > 0)
+    {
+        layout->addSpacing(spacing);
+    }
+    if (trailingExtent > 0) layout->addSpacing(trailingExtent);
+
+    list->setWidget(content);
+    QWidget *viewport = list->viewport();
+    viewport->setProperty(
+        "juliaVirtualListNodeId",
+        data["nodeId"].toString()
+    );
+    viewport->setProperty("juliaVirtualListHorizontal", horizontal);
+    viewport->installEventFilter(this);
+
+    const QPointer<QScrollArea> safeList(list);
+    const QPointer<QWidget> safeViewport(viewport);
+    QTimer::singleShot(0, list, [this, safeList, safeViewport, props, horizontal]() {
+        if (!safeList || !safeViewport) return;
+        QScrollBar *bar = horizontal
+            ? safeList->horizontalScrollBar()
+            : safeList->verticalScrollBar();
+        const QSignalBlocker signalBlocker(bar);
+        bar->setValue(qMax(0, props["scrollOffset"].toInt()));
+        sendVirtualListViewport(safeViewport);
+    });
+}
+
+void JuliaRuntime::sendVirtualListViewport(QWidget *viewport)
+{
+    if (!viewport || node->state() != QProcess::Running) return;
+
+    QScrollArea *list =
+        qobject_cast<QScrollArea *>(viewport->parentWidget());
+    if (!list) return;
+
+    const bool horizontal =
+        viewport->property("juliaVirtualListHorizontal").toBool();
+    QScrollBar *scrollBar = horizontal
+        ? list->horizontalScrollBar()
+        : list->verticalScrollBar();
+    QJsonObject message;
+    message["type"] = "listViewport";
+    message["nodeId"] =
+        viewport->property("juliaVirtualListNodeId").toString();
+    message["offset"] = scrollBar->value();
+    message["viewportSize"] =
+        horizontal ? viewport->width() : viewport->height();
+    QJsonArray items;
+    QWidget *content = list->widget();
+    QLayout *layout = content ? content->layout() : nullptr;
+    if (layout) {
+        for (int index = 0; index < layout->count(); index++) {
+            QWidget *item = layout->itemAt(index)->widget();
+            if (!item || !item->property("juliaListIndex").isValid()) {
+                continue;
+            }
+            const int size = horizontal ? item->width() : item->height();
+            if (size <= 0) continue;
+            QJsonObject measurement;
+            measurement["index"] =
+                item->property("juliaListIndex").toInt();
+            measurement["size"] = size;
+            items.append(measurement);
+        }
+    }
+    message["items"] = items;
+    node->write(
+        QJsonDocument(message).toJson(QJsonDocument::Compact) + "\n"
+    );
+}
+
+void JuliaRuntime::applyVirtualListPatches(const QJsonObject &message)
+{
+    const QList<QScrollArea *> lists =
+        window->findChildren<QScrollArea *>();
+    for (const QJsonValue &value : message["updates"].toArray()) {
+        const QJsonObject update = value.toObject();
+        const QString nodeId = update["nodeId"].toString();
+        QScrollArea *target = nullptr;
+        for (QScrollArea *list : lists) {
+            if (list->property("juliaNodeId").toString() == nodeId) {
+                target = list;
+                break;
+            }
+        }
+        if (!target) {
+            qWarning() << "Could not find virtual list for patch:" << nodeId;
+            continue;
+        }
+        updateVirtualList(target, update, true);
+    }
 }
 
 void JuliaRuntime::applyTableItemStyle(QTableWidgetItem *item, const QJsonObject &style)
@@ -647,9 +905,11 @@ QWidget *JuliaRuntime::createFlexContainer(const QJsonObject &data, const QStrin
         layout = new QVBoxLayout(container);
     }
 
-    int padding = styleLengthPixels(
-        props["padding"],
-        styleLengthPixels(styleValue(style, "padding", "padding"), 0)
+    const QMargins padding = styleBoxSpacing(
+        props["padding"].isUndefined()
+            ? styleValue(style, "padding", "padding")
+            : props["padding"],
+        0
     );
     int spacing = styleLengthPixels(
         props["spacing"],
@@ -669,9 +929,7 @@ QWidget *JuliaRuntime::createFlexContainer(const QJsonObject &data, const QStrin
     if (align == "flex-end") align = "end";
 
     container->installEventFilter(this);
-    layout->setContentsMargins(
-        padding, padding, padding, padding
-    );
+    layout->setContentsMargins(padding);
     layout->setSpacing(0);
 
     struct FlexItem {
@@ -692,7 +950,7 @@ QWidget *JuliaRuntime::createFlexContainer(const QJsonObject &data, const QStrin
         QJsonObject childProps = childData["props"].toObject();
         QJsonObject childStyle = childProps["style"].toObject();
         int flex = qMax(0, childProps["flex"].toInt(childStyle["flex"].toInt(0)));
-        int margin = styleLengthPixels(
+        const QMargins margin = styleBoxSpacing(
             styleValue(childStyle, "margin", "margin"),
             0
         );
@@ -700,14 +958,14 @@ QWidget *JuliaRuntime::createFlexContainer(const QJsonObject &data, const QStrin
         const bool fixedHeight = widget->minimumHeight() == widget->maximumHeight();
 
         QWidget *layoutWidget = widget;
-        if (margin > 0) {
+        if (!margin.isNull()) {
             layoutWidget = new QWidget();
             layoutWidget->installEventFilter(this);
             QBoxLayout *marginLayout = new QBoxLayout(
                 isRow ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom,
                 layoutWidget
             );
-            marginLayout->setContentsMargins(margin, margin, margin, margin);
+            marginLayout->setContentsMargins(margin);
             marginLayout->setSpacing(0);
             marginLayout->addWidget(widget);
             updatePercentSizedChildren(layoutWidget);
@@ -937,8 +1195,8 @@ void JuliaRuntime::renderUI(const QByteArray &json)
        focusedCursorPosition = focusedInput->cursorPosition();
    }
 
-   const int padding = style["padding"].toInt(0);
-    layout->setContentsMargins(padding, padding, padding, padding);
+    const QMargins padding = styleBoxSpacing(style["padding"], 0);
+    layout->setContentsMargins(padding);
     layout->setSpacing(style["gap"].toInt(0));
 
     // Menghapus seluruh widget dari tampilan sebelumnya.

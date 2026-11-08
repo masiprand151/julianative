@@ -19,27 +19,24 @@ import { styles } from "../styles";
 
 interface HomeScreenProps {
   navigation: StackNavigation<RootStackParamList>;
-  count: number;
-  setCount: StateSetter<number>;
-  email: string;
-  setEmail: StateSetter<string>;
-  modalVisible: boolean;
-  setModalVisible: StateSetter<boolean>;
+  state: {
+    count: number;
+    setCount: StateSetter<number>;
+    email: string;
+    setEmail: StateSetter<string>;
+    modalVisible: boolean;
+    setModalVisible: StateSetter<boolean>;
+  };
 }
 
-export function HomeScreen({
-  navigation,
-  count,
-  setCount,
-  email,
-  setEmail,
-  modalVisible,
-  setModalVisible,
-}: HomeScreenProps) {
+export function HomeScreen({ navigation, state }: HomeScreenProps) {
+  const { count, setCount, email, setEmail, modalVisible, setModalVisible } =
+    state;
+
   return Column({
     style: {
       gap: 14,
-      padding: 18,
+      padding: { top: 0, right: 0, bottom: 18, left: 18 },
       backgroundColor: "#e8f0ee",
       borderColor: "#b8cbc5",
       borderWidth: 1,
@@ -102,7 +99,7 @@ export function HomeScreen({
         scrollDirection: "vertical",
         style: {
           height: 180,
-          padding: 12,
+          padding: { top: 12, right: 12, bottom: 12, left: 12 },
           gap: 8,
           backgroundColor: "#ffffff",
           borderColor: "#9bbab0",
@@ -111,9 +108,7 @@ export function HomeScreen({
         },
         children: [
           Text("Konten ini berada di dalam View dengan scroll vertikal."),
-          ...Array.from({ length: 8 }, (_, index) =>
-            Text(`Item ${index + 1}`),
-          ),
+          ...Array.from({ length: 8 }, (_, index) => Text(`Item ${index + 1}`)),
         ],
       }),
       FlatList({
@@ -123,6 +118,7 @@ export function HomeScreen({
           "Katherine Johnson",
           "Margaret Hamilton",
         ],
+        keyExtractor: (person) => person,
         renderItem: ({ item, index }) =>
           Text(`${index + 1}. ${item}`, {
             style: { color: "#193b35" },
@@ -136,7 +132,10 @@ export function HomeScreen({
           borderWidth: 1,
           borderRadius: 6,
         },
-        contentContainerStyle: { gap: 8, padding: 12 },
+        contentContainerStyle: {
+          gap: 8,
+          padding: { top: 12, right: 12, bottom: 12, left: 12 },
+        },
       }),
       Table({
         data: [
@@ -171,7 +170,11 @@ export function HomeScreen({
         width: 420,
         height: 220,
         onClose: () => setModalVisible(false),
-        style: { padding: 20, gap: 12, backgroundColor: "#ffffff" },
+        style: {
+          padding: { top: 20, right: 20, bottom: 20, left: 20 },
+          gap: 12,
+          backgroundColor: "#ffffff",
+        },
         children: [
           Text("Ini adalah dialog modal native."),
           Button({
@@ -218,7 +221,7 @@ export function HomeScreen({
             style: {
               width: 170,
               height: 72,
-              padding: 8,
+              padding: { top: 8, right: 8, bottom: 8, left: 8 },
               backgroundColor: "#ffffff",
               borderColor: "#9bbab0",
               borderWidth: 1,

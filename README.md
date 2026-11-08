@@ -1,5 +1,8 @@
 # julianative
 
+Dokumentasi lengkap berbahasa Indonesia tersedia di folder [`doc/`](doc/index.md).
+Mulai dari [panduan dokumentasi](doc/index.md) untuk melihat topik dan contoh.
+
 ## System Requirements
 
 To get started with this project, ensure you have the following tools and libraries:
@@ -153,7 +156,16 @@ can use camelCase or common CSS kebab-case names. Qt-supported CSS lengths
 include numbers, `px`, `pt`, `em`, and `ex`; width and height also accept
 percentages. The native renderer supports `:hover`, `:focus`, `:active`,
 `:pressed`, and `:disabled` states; CSS properties are limited to those
-supported by Qt stylesheets.
+supported by Qt stylesheets. `padding` and `margin` also accept per-side values:
+
+```ts
+View({
+  style: {
+    padding: { top: 8, right: 12, bottom: 8, left: 12 },
+    margin: { top: 0, right: 4, bottom: 8, left: 4 },
+  },
+});
+```
 
 ```ts
 const styles = StyleSheet.create({
@@ -184,22 +196,54 @@ View({
 
 `FlatList` renders data with `renderItem`, supports horizontal or vertical
 scrolling, separators, an empty-state component, and separate container styles.
-The current native renderer creates every item (it does not virtualize large
-lists).
+It virtualizes its native item widgets using `estimatedItemSize`, `initialNumToRender`,
+and `overscan`. Set a bounded height for a vertical list (or bounded width for a
+horizontal list) so Qt can determine the visible window. Use `keyExtractor`
+with stable unique keys when items can be inserted, removed, or reordered;
+without it, item indices are used as keys. Rows with unchanged keys and content
+are reused when the list window or ordering changes.
 
 ```ts
 FlatList({
-  data: ["Ada", "Grace", "Linus"],
-  renderItem: ({ item, index }) => Text(`${index + 1}. ${item}`),
+  data: [
+    { id: "ada", name: "Ada" },
+    { id: "grace", name: "Grace" },
+    { id: "linus", name: "Linus" },
+  ],
+  keyExtractor: (person) => person.id,
+  renderItem: ({ item, index }) => Text(`${index + 1}. ${item.name}`),
   ItemSeparatorComponent: () => View({ style: { height: 1, backgroundColor: "#ddd" } }),
+  estimatedItemSize: 44,
+  initialNumToRender: 12,
+  overscan: 3,
   style: { height: 220 },
   contentContainerStyle: { gap: 8, padding: 12 },
 });
 ```
 
-`keyExtractor` is not currently supported because the renderer rebuilds the
-entire native view tree on each state update; stable keys have no reconciliation
-behavior yet.
+`estimatedItemSize` is the estimated row size in pixels, excluding any
+`contentContainerStyle.gap`. Visible rows are measured by the native renderer,
+so rows can have different heights; the estimate is used for rows that have not
+yet been measured. The item renderer is called only for the initial window and
+rows near the viewport. All input data is still held in memory by the app.
+
+## LocalStorage
+
+`LocalStorage` asynchronously stores JSON-compatible values in the current
+user's application data directory. Values persist across application restarts;
+storage errors reject the returned promise.
+
+```ts
+import { LocalStorage } from "@julia/core";
+
+const settings = await LocalStorage.getItem<{ theme: string }>("settings");
+await LocalStorage.setItem("settings", { theme: "dark" });
+await LocalStorage.removeItem("settings");
+await LocalStorage.clear();
+```
+
+`getItem` returns `undefined` when a key is missing. Store only JSON values
+(objects, arrays, strings, numbers, booleans, or `null`).
 
 ## Table
 

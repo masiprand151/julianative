@@ -116,6 +116,32 @@ QString JuliaRuntime::cssDeclarations(const QJsonObject &style, bool includePadd
             {
                 continue;
             }
+            if (
+                (property == "padding" || property == "margin") &&
+                it.value().isObject()
+            ) {
+                const QJsonObject sides = it.value().toObject();
+                for (const QString &side : {
+                         QString("top"),
+                         QString("right"),
+                         QString("bottom"),
+                         QString("left")
+                     })
+                {
+                    if (!sides.contains(side)) continue;
+                    const QString sideProperty =
+                        property + "-" + side;
+                    const QString sideValue =
+                        cssValue(sideProperty, sides[side]);
+                    if (!sideValue.isEmpty()) {
+                        declarations.append(
+                            QString("%1: %2;")
+                                .arg(sideProperty, sideValue)
+                        );
+                    }
+                }
+                continue;
+            }
             if (isGeometry && it.value().isString() &&
                 it.value().toString().trimmed().endsWith('%'))
             {
@@ -209,6 +235,38 @@ int JuliaRuntime::styleLengthPixels(const QJsonValue &value, int fallback) const
     bool ok = false;
     const double amount = text.toDouble(&ok);
     return ok ? qRound(amount * scale) : fallback;
+}
+
+QMargins JuliaRuntime::styleBoxSpacing(
+    const QJsonValue &value,
+    int fallback
+) const
+{
+    if (!value.isObject()) {
+        const int spacing = qMax(
+            0,
+            styleLengthPixels(value, fallback)
+        );
+        return QMargins(spacing, spacing, spacing, spacing);
+    }
+
+    const QJsonObject sides = value.toObject();
+    const auto side = [this, &sides](const QString &name) {
+        const QString cssName = name.toLower();
+        return qMax(
+            0,
+            styleLengthPixels(
+                sides.contains(name) ? sides[name] : sides[cssName],
+                0
+            )
+        );
+    };
+    return QMargins(
+        side("left"),
+        side("top"),
+        side("right"),
+        side("bottom")
+    );
 }
 
 QJsonValue JuliaRuntime::styleValue(const QJsonObject &style, const QString &camelName, const QString &cssName) const
@@ -355,4 +413,3 @@ void JuliaRuntime::addJustifyEnd(QBoxLayout *layout)
 {
     layout->insertStretch(0, 1);
 }
-

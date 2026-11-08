@@ -5,6 +5,7 @@
 #include <QDialog>
 #include <QWindow>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QFrame>
 #include <QLabel>
 #include <QLineEdit>
@@ -21,6 +22,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QFile>
+#include <QSaveFile>
 #include <QFileSystemWatcher>
 #include <QImage>
 #include <QPainter>
@@ -31,8 +33,10 @@
 #include <QNetworkRequest>
 #include <QSvgRenderer>
 #include <QTimer>
+#include <QStandardPaths>
 #include <QCoreApplication>
 #include <QSizePolicy>
+#include <QMargins>
 #include <QList>
 #include <QCursor>
 #include <QHash>
@@ -148,6 +152,13 @@ public:
     QWidget *createImage(const QJsonObject &props);
     QWidget *createNode(const QJsonObject &data);
     QWidget *createNodeImpl(const QJsonObject &data);
+    QWidget *createVirtualList(const QJsonObject &data);
+    void updateVirtualList(
+        QScrollArea *list,
+        const QJsonObject &data,
+        bool reuseItems
+    );
+    void sendVirtualListViewport(QWidget *viewport);
     QWidget *createVideo(const QJsonObject &data);
     void applyTableItemStyle(
         QTableWidgetItem *item,
@@ -158,6 +169,8 @@ public:
     void clearFloatingActionButtons();
     void positionFloatingActionButtons();
     void applyLeafPatches(const QJsonObject &message);
+    void applyVirtualListPatches(const QJsonObject &message);
+    void handleStorageRequest(const QJsonObject &message);
     void createModal(const QJsonObject &data);
     QWidget *createView(const QJsonObject &data);
     QWidget *createRow(const QJsonObject &data);
@@ -167,6 +180,7 @@ public:
         const QString &direction
     );
     int styleLengthPixels(const QJsonValue &value, int fallback = -1) const;
+    QMargins styleBoxSpacing(const QJsonValue &value, int fallback = 0) const;
     QJsonValue styleValue(
         const QJsonObject &style,
         const QString &camelName,
