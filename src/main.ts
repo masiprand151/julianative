@@ -1,4 +1,10 @@
-import { Application, createStackNavigator, useState } from "@julia/core";
+import {
+  Application,
+  createStackNavigator,
+  LocalStorage,
+  useEffect,
+  useState,
+} from "@julia/core";
 import { Widget } from "@julia/core/components";
 import { DetailsScreen } from "./screens/DetailsScreen";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -24,8 +30,37 @@ const headerStyle = {
 
 function Main() {
   const [count, setCount] = useState(0);
+  const [countLoaded, setCountLoaded] = useState(false);
   const [email, setEmail] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    LocalStorage.getItem("home-count")
+      .then((savedCount) => {
+        if (!active) return;
+        if (typeof savedCount === "number" && Number.isFinite(savedCount)) {
+          setCount(savedCount);
+        }
+        setCountLoaded(true);
+      })
+      .catch((error) => {
+        console.error("Could not load saved count:", error);
+        if (active) setCountLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!countLoaded) return;
+
+    LocalStorage.setItem("home-count", count).catch((error) => {
+      console.error("Could not save count:", error);
+    });
+  }, [count, countLoaded]);
 
   return Widget({
     title: "Style Test",

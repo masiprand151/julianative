@@ -43,9 +43,11 @@ Widget({
 
 ## State
 
-Use `useState` inside the root component to keep values between renders. Calling
-the setter re-renders the UI in the existing native window. State hooks must be
-called in the same order on every render.
+Use `useState` inside a component to keep values between renders. Calling the
+setter re-renders the UI in the existing native window. `useEffect` runs
+side-effects after rendering, accepts an optional dependency array, and calls
+its cleanup before rerunning or when its state scope is no longer rendered.
+Hooks must be called in the same order on every render.
 When a render changes only `Text`, `Button` text, or `TextInput` value, the
 native renderer updates those widgets in place. This preserves input focus and
 avoids rebuilding the rest of the window. Structural changes still rebuild the
@@ -66,6 +68,35 @@ function Main() {
   });
 }
 ```
+
+Use `useEffect` for work that should happen outside rendering, such as loading
+saved settings. Return a cleanup function for subscriptions, timers, or other
+resources:
+
+```ts
+function Settings() {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    let active = true;
+    LocalStorage.getItem<{ theme: string }>("settings")
+      .then((settings) => {
+        if (active && settings) setTheme(settings.theme);
+      })
+      .catch((error) => console.error("Could not load settings:", error));
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return Text(`Theme: ${theme}`);
+}
+```
+
+An omitted dependency array runs the effect after every render. An empty array
+runs it once while the component scope is active. A populated array reruns it
+when one of its values changes.
 
 ## Stack Navigation
 

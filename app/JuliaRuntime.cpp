@@ -112,8 +112,10 @@ void JuliaRuntime::handleStorageRequest(const QJsonObject &message)
                 requestFailed = true;
             } else {
                 QJsonParseError parseError;
+                const QByteArray contents = source.readAll();
+                source.close();
                 const QJsonDocument document =
-                    QJsonDocument::fromJson(source.readAll(), &parseError);
+                    QJsonDocument::fromJson(contents, &parseError);
                 if (parseError.error != QJsonParseError::NoError ||
                     !document.isObject())
                 {
@@ -174,7 +176,9 @@ void JuliaRuntime::handleStorageRequest(const QJsonObject &message)
                 QSaveFile destination(filePath);
                 if (!destination.open(QIODevice::WriteOnly)) {
                     response["success"] = false;
-                    response["error"] = destination.errorString();
+                    response["error"] =
+                        QString("Could not open local storage file '%1': %2")
+                            .arg(filePath, destination.errorString());
                 } else {
                     const QByteArray contents =
                         QJsonDocument(storage).toJson(QJsonDocument::Indented);
@@ -184,7 +188,9 @@ void JuliaRuntime::handleStorageRequest(const QJsonObject &message)
                         destination.cancelWriting();
                     } else if (!destination.commit()) {
                         response["success"] = false;
-                        response["error"] = destination.errorString();
+                        response["error"] =
+                            QString("Could not replace local storage file '%1': %2")
+                                .arg(filePath, destination.errorString());
                     } else {
                         response["success"] = true;
                     }

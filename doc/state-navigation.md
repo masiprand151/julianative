@@ -28,6 +28,62 @@ Panggil hook dengan urutan yang sama setiap render. Jangan meletakkan
 `useState` di dalam kondisi atau loop. Untuk mengubah nilai berdasarkan nilai
 sebelumnya, gunakan updater function seperti contoh di atas.
 
+## Efek samping dengan `useEffect`
+
+Gunakan `useEffect` untuk pekerjaan di luar proses render, misalnya membaca
+`LocalStorage`, memulai timer, atau memasang listener. Effect dijalankan setelah
+render selesai, bukan saat fungsi komponen sedang membangun VNode.
+
+```ts
+import { useEffect, useState } from "@julia/core";
+import { Text } from "@julia/core/components";
+import { LocalStorage } from "@julia/core";
+
+function ThemeLabel() {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    let active = true;
+    LocalStorage.getItem<{ theme: string }>("settings")
+      .then((settings) => {
+        if (active && settings) setTheme(settings.theme);
+      })
+      .catch((error) => console.error("Gagal membaca pengaturan:", error));
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return Text(`Tema: ${theme}`);
+}
+```
+
+Argumen kedua mengatur kapan effect dijalankan:
+
+- Tidak diberikan: effect dijalankan setelah setiap render.
+- `[]`: effect dijalankan ketika scope pertama kali tampil kembali setelah
+  mount.
+- `[valueA, valueB]`: effect dijalankan saat pertama kali tampil dan ketika
+  salah satu nilai berubah menurut `Object.is`.
+
+Sebelum effect dijalankan ulang, cleanup dari effect sebelumnya dipanggil.
+Cleanup juga dipanggil ketika scope tidak lagi dirender, misalnya layar
+navigasi ditinggalkan atau item virtual keluar dari jendela daftar. Saat scope
+ditampilkan lagi, effect dijalankan kembali. State layar navigasi tetap dapat
+dipertahankan secara terpisah dari cleanup effect.
+
+Aturan penggunaan:
+
+- Panggil hook pada tingkat teratas fungsi komponen, bukan di kondisi atau
+  loop.
+- Pertahankan urutan pemanggilan hook pada setiap render.
+- Sertakan semua nilai yang dibaca effect dan dapat berubah di dependency
+  array.
+- Gunakan cleanup untuk menghentikan timer atau melepas listener.
+- Operasi asynchronous sebaiknya menangani rejection dengan `.catch()` atau
+  `try/catch`.
+
 ## Render ulang
 
 Perubahan teks `Text`, teks `Button`, atau nilai `TextInput` dapat dikirim
