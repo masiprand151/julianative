@@ -8,6 +8,21 @@ QWidget *JuliaRuntime::createNode(const QJsonObject &data)
             "juliaNodeId",
             data["nodeId"].toString()
         );
+        if (data["type"].toString() == "FloatingActionButton") {
+            const QJsonObject props = data["props"].toObject();
+            widget->setParent(window);
+            widget->setProperty(
+                "juliaFabPlacement",
+                props["placement"].toString("bottom-right")
+            );
+            widget->setProperty(
+                "juliaFabMargin",
+                props["margin"].toInt(24)
+            );
+            floatingActionButtons.append(widget);
+            widget->show();
+            return nullptr;
+        }
     }
     return widget;
 }
@@ -946,25 +961,6 @@ void JuliaRuntime::renderUI(const QByteArray &json)
         QWidget *widget = createNode(childData);
 
         if (widget) {
-            if (childData["type"].toString() ==
-                "FloatingActionButton")
-            {
-                const QJsonObject fabProps =
-                    childData["props"].toObject();
-                widget->setParent(window);
-                widget->setProperty(
-                    "juliaFabPlacement",
-                    fabProps["placement"].toString("bottom-right")
-                );
-                widget->setProperty(
-                    "juliaFabMargin",
-                    fabProps["margin"].toInt(24)
-                );
-                floatingActionButtons.append(widget);
-                widget->show();
-                continue;
-            }
-
             // Membaca properti flex untuk elemen root-level juga
             QJsonObject childProps = childData["props"].toObject();
             int flex = qMax(0, childProps["flex"].toInt(0));
@@ -1007,4 +1003,3 @@ void JuliaRuntime::renderUI(const QByteArray &json)
         autoFocusInput->setFocus(Qt::OtherFocusReason);
     }
 }
-
