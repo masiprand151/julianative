@@ -44,7 +44,14 @@ yang digunakan.
 
 Gunakan `try/catch` di sekitar operasi asynchronous. Pastikan nilai yang
 diberikan ke `setItem` dapat diserialisasi sebagai JSON dan direktori data
-aplikasi dapat ditulis.
+aplikasi dapat ditulis. Jika pesan error menyatakan `Access is denied`,
+pastikan `local-storage.json` tidak read-only atau dikunci proses lain, dan
+akun pengguna memiliki izin menulis ke direktori data aplikasi. Path lengkap
+file sekarang disertakan pada error saat membuka atau mengganti file gagal.
+
+File yang rusak atau bukan object JSON juga menyebabkan operasi storage gagal.
+Jangan hapus file sebelum membuat salinan jika data di dalamnya masih
+diperlukan.
 
 ## Portable gagal membuka aplikasi atau aset
 

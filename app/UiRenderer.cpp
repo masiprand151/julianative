@@ -188,6 +188,10 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
         return createColumn(data);
     }
 
+    if (type == "Grid") {
+        return createGrid(data);
+    }
+
     if (type == "View") {
         return createView(data);
     }
@@ -879,6 +883,94 @@ QWidget *JuliaRuntime::createRow(const QJsonObject &data)
 QWidget *JuliaRuntime::createColumn(const QJsonObject &data)
 {
     return createFlexContainer(data, "column");
+}
+
+QWidget *JuliaRuntime::createGrid(const QJsonObject &data)
+{
+    const QJsonObject props = data["props"].toObject();
+    const QJsonObject style = props["style"].toObject();
+    const QJsonArray children = data["children"].toArray();
+    const int columns = qMax(1, props["columns"].toInt(2));
+
+    auto *container = new QWidget();
+    container->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Expanding
+    );
+    applyStyle(container, style);
+
+    auto *layout = new QGridLayout(container);
+    const QMargins padding = styleBoxSpacing(
+        props["padding"].isUndefined()
+            ? styleValue(style, "padding", "padding")
+            : props["padding"],
+        0
+    );
+    const QJsonValue commonGap = props["gap"].isUndefined()
+        ? styleValue(style, "gap", "gap")
+        : props["gap"];
+    const QJsonValue rowGap = props["rowGap"].isUndefined()
+        ? styleValue(style, "rowGap", "row-gap")
+        : props["rowGap"];
+    const QJsonValue columnGap = props["columnGap"].isUndefined()
+        ? styleValue(style, "columnGap", "column-gap")
+        : props["columnGap"];
+
+    layout->setContentsMargins(padding);
+    layout->setHorizontalSpacing(styleLengthPixels(
+        columnGap.isUndefined() ? commonGap : columnGap,
+        0
+    ));
+    layout->setVerticalSpacing(styleLengthPixels(
+        rowGap.isUndefined() ? commonGap : rowGap,
+        0
+    ));
+    for (int column = 0; column < columns; column++) {
+        layout->setColumnStretch(column, 1);
+    }
+
+    container->installEventFilter(this);
+    int itemIndex = 0;
+    for (const QJsonValue &child : children) {
+        const QJsonObject childData = child.toObject();
+        QWidget *widget = createNode(childData);
+        if (!widget) continue;
+
+        const QJsonObject childProps = childData["props"].toObject();
+        const QJsonObject childStyle = childProps["style"].toObject();
+        const QMargins margin = styleBoxSpacing(
+            styleValue(childStyle, "margin", "margin"),
+            0
+        );
+        QWidget *layoutWidget = widget;
+        if (!margin.isNull()) {
+            layoutWidget = new QWidget();
+            layoutWidget->installEventFilter(this);
+            auto *marginLayout = new QVBoxLayout(layoutWidget);
+            marginLayout->setContentsMargins(margin);
+            marginLayout->setSpacing(0);
+            marginLayout->addWidget(widget);
+            updatePercentSizedChildren(layoutWidget);
+        }
+
+        QSizePolicy policy = layoutWidget->sizePolicy();
+        if (layoutWidget->minimumWidth() != layoutWidget->maximumWidth()) {
+            policy.setHorizontalPolicy(QSizePolicy::Expanding);
+        }
+        if (layoutWidget->minimumHeight() != layoutWidget->maximumHeight()) {
+            policy.setVerticalPolicy(QSizePolicy::Expanding);
+        }
+        layoutWidget->setSizePolicy(policy);
+
+        const int row = itemIndex / columns;
+        const int column = itemIndex % columns;
+        layout->addWidget(layoutWidget, row, column);
+        layout->setRowStretch(row, 1);
+        itemIndex++;
+    }
+
+    updatePercentSizedChildren(container);
+    return container;
 }
 
 QWidget *JuliaRuntime::createFlexContainer(const QJsonObject &data, const QString &direction)

@@ -33,8 +33,10 @@ Berikut bagian proyek yang paling sering disentuh saat mengembangkan aplikasi.
 ## Entry point aplikasi
 
 Saat ini contoh aplikasi menyusun tampilan utama langsung di `src/main.ts`.
-State UI dan efek samping seperti pemuatan data lokal juga dikelola di fungsi
-`Main()`. Pola ini cocok untuk aplikasi kecil atau contoh komponen.
+State penghitung dikelola di fungsi `Main()`. Pola ini cocok untuk aplikasi
+kecil atau contoh komponen. Fitur `useEffect` dan `LocalStorage` tersedia di
+API, tetapi contoh `Main()` saat ini tidak memuat atau menyimpan penghitung
+secara persisten.
 
 Jika aplikasi berkembang, UI dapat dipisahkan ke modul komponen atau screen
 tersendiri dan diimpor dari `main.ts`. Contoh prop dengan object:

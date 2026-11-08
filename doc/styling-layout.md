@@ -53,7 +53,8 @@ Sisi yang tidak disebut dalam object bernilai `0`. Gunakan nama `top`, `right`,
 ## Mengatur layout
 
 `Column` dan `Row` adalah pilihan sederhana untuk susunan vertikal atau
-horizontal. `View` menerima `direction`, `justifyContent`, dan `alignItems`.
+horizontal. `Grid` menyusun item dalam beberapa kolom. `View` menerima
+`direction`, `justifyContent`, dan `alignItems`.
 
 ```ts
 View({
@@ -65,6 +66,19 @@ View({
     Text("Judul"),
     Button({ text: "Aksi" }),
   ],
+});
+```
+
+Gunakan `Grid` saat item perlu mengalir ke baris berikutnya. Jumlah kolom
+ditentukan oleh `columns`; jarak antar sel dapat memakai `gap` atau diatur
+terpisah dengan `rowGap` dan `columnGap`.
+
+```ts
+Grid({
+  columns: 3,
+  rowGap: 12,
+  columnGap: 16,
+  children: [Text("Satu"), Text("Dua"), Text("Tiga"), Text("Empat")],
 });
 ```
 

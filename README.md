@@ -5,11 +5,14 @@ Mulai dari [panduan dokumentasi](doc/index.md) untuk melihat topik dan contoh.
 
 ## System Requirements
 
-To get started with this project, ensure you have the following tools and libraries:
+- Node.js and npm for the TypeScript renderer and scripts.
+- CMake 3.21 or later and a C++17 compiler.
+- Qt 6 with Core, Gui, Widgets, Network, Svg, Multimedia, and
+  MultimediaWidgets development modules.
+- Ninja for the default build scripts, unless you configure CMake with a
+  different generator.
 
-- CMake (Version 3.14 or later): Essential for building and managing the project files.
-- C++ Compiler: Compatible with Clang, GCC, or MSVC. Choose one based on your development environment.
-- GTK3 Development Libraries (for Linux users): Necessary for GUI development on Linux platforms.
+See [the getting-started guide](doc/getting-started.md) for setup details.
 
 ## Development Hot Reload
 

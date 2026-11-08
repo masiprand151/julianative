@@ -4,6 +4,7 @@ const { test } = require("node:test");
 const { Card } = require("../app/build/app/core/components/Card.js");
 const { Column } = require("../app/build/app/core/components/Column.js");
 const { FlatList } = require("../app/build/app/core/components/FlatList.js");
+const { Grid } = require("../app/build/app/core/components/Grid.js");
 const { Image } = require("../app/build/app/core/components/Image.js");
 const {
   clearFloatingActionButtonCallbacks,
@@ -47,12 +48,23 @@ const {
 
 test("Card composes a styled view with its title and children", () => {
   const child = { type: "Text", props: { text: "Details" } };
-  const card = Card({ title: "Profile", children: [child] });
+  const card = Card({
+    title: "Profile",
+    children: [child],
+    style: {
+      borderLeftWidth: 4,
+      borderLeftColor: "#147d72",
+      borderBottom: "2px solid #d5e0dc",
+    },
+  });
 
   assert.equal(card.type, "View");
-  assert.equal(card.props.style.padding, 16);
-  assert.equal(card.children[0].props.text, "Profile");
-  assert.equal(card.children[1], child);
+  assert.equal(card.props.style.borderWidth, 1);
+  assert.equal(card.props.style.borderLeftWidth, 4);
+  assert.equal(card.props.style.borderLeftColor, "#147d72");
+  assert.equal(card.props.style.borderBottom, "2px solid #d5e0dc");
+  assert.equal(card.children[0].children[0].props.text, "Profile");
+  assert.equal(card.children[1].children[0], child);
 });
 
 test("Text converts values and lets styles override presentation props", () => {
@@ -79,6 +91,31 @@ test("Column and Row pass children and layout styles through", () => {
   assert.equal(row.props.spacing, 6);
   assert.equal(row.props.padding, 10);
   assert.equal(row.children[0], child);
+});
+
+test("Grid arranges children with validated columns and independent gaps", () => {
+  const children = [
+    { type: "Text", props: { text: "One" } },
+    { type: "Text", props: { text: "Two" } },
+    { type: "Text", props: { text: "Three" } },
+  ];
+  const grid = Grid({
+    columns: 2,
+    spacing: 12,
+    rowGap: 8,
+    padding: { left: 4, right: 4 },
+    children,
+  });
+
+  assert.equal(grid.type, "Grid");
+  assert.equal(grid.props.columns, 2);
+  assert.equal(grid.props.gap, 12);
+  assert.equal(grid.props.rowGap, 8);
+  assert.equal(grid.props.columnGap, 12);
+  assert.deepEqual(grid.props.padding, { left: 4, right: 4 });
+  assert.deepEqual(grid.children, children);
+  assert.throws(() => Grid({ columns: 0 }), RangeError);
+  assert.throws(() => Grid({ columns: 1.5 }), RangeError);
 });
 
 test("View defaults to a column and exposes scroll configuration", () => {
@@ -514,9 +551,18 @@ test("Widget preserves explicit coordinates when the title bar is visible", () =
 });
 
 test("Widget accepts named screen positions", () => {
-  const widget = Widget({ position: "center", body: [] });
+  const positions = [
+    "center",
+    "top-left",
+    "top-right",
+    "bottom-left",
+    "bottom-right",
+  ];
 
-  assert.equal(widget.props.position, "center");
+  for (const position of positions) {
+    const widget = Widget({ position, body: [] });
+    assert.equal(widget.props.position, position);
+  }
 });
 
 test("Widget fullscreen position takes precedence without mutating props", () => {

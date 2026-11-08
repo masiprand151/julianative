@@ -2,6 +2,7 @@ export type ComponentType =
   | "Widget"
   | "Column"
   | "Row"
+  | "Grid"
   | "Text"
   | "Image"
   | "TextInput"
@@ -60,12 +61,31 @@ export interface StyleProps {
   margin?: CSSLength | BoxSpacing;
   padding?: CSSLength | BoxSpacing;
   gap?: CSSLength;
+  rowGap?: CSSLength;
+  columnGap?: CSSLength;
   backgroundColor?: string;
   background?: string;
   color?: string;
   border?: string;
+  borderTop?: string;
+  borderRight?: string;
+  borderBottom?: string;
+  borderLeft?: string;
   borderColor?: string;
   borderWidth?: CSSLength;
+  borderStyle?: string;
+  borderTopColor?: string;
+  borderRightColor?: string;
+  borderBottomColor?: string;
+  borderLeftColor?: string;
+  borderTopWidth?: CSSLength;
+  borderRightWidth?: CSSLength;
+  borderBottomWidth?: CSSLength;
+  borderLeftWidth?: CSSLength;
+  borderTopStyle?: string;
+  borderRightStyle?: string;
+  borderBottomStyle?: string;
+  borderLeftStyle?: string;
   borderRadius?: CSSLength;
   fontSize?: CSSLength;
   fontWeight?: "normal" | "bold";
@@ -140,6 +160,17 @@ export type CursorType =
 
 export interface LayoutProps {
   spacing?: number;
+  padding?: CSSLength | BoxSpacing;
+  style?: ViewStyle;
+  children?: VNode[];
+}
+
+export interface GridProps {
+  columns?: number;
+  spacing?: CSSLength;
+  gap?: CSSLength;
+  rowGap?: CSSLength;
+  columnGap?: CSSLength;
   padding?: CSSLength | BoxSpacing;
   style?: ViewStyle;
   children?: VNode[];

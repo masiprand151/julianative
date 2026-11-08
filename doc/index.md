@@ -8,17 +8,19 @@ Contoh ditulis dengan TypeScript.
 
 1. [Mulai menggunakan JuliaNative](getting-started.md) — kebutuhan, instalasi,
    dan menjalankan aplikasi pertama.
-2. [Struktur proyek](project-structure.md) — fungsi folder dan alur kerja UI.
-3. [Komponen UI](components.md) — properti dan contoh komponen yang tersedia.
-4. [Style, layout, padding, dan margin](styling-layout.md) — cara menyusun dan
+2. [Siklus hidup aplikasi](application-lifecycle.md) — entry point, callback
+   window, logging, dan keluar dari aplikasi.
+3. [Struktur proyek](project-structure.md) — fungsi folder dan alur kerja UI.
+4. [Komponen UI](components.md) — properti dan contoh komponen yang tersedia.
+5. [Style, layout, padding, dan margin](styling-layout.md) — cara menyusun dan
    memberi gaya pada antarmuka.
-5. [State dan navigasi](state-navigation.md) — state komponen dan perpindahan
+6. [State dan navigasi](state-navigation.md) — state komponen dan perpindahan
    halaman.
-6. [Daftar dan penyimpanan lokal](lists-storage.md) — `FlatList`, key, virtualisasi,
+7. [Daftar dan penyimpanan lokal](lists-storage.md) — `FlatList`, key, virtualisasi,
    dan `LocalStorage`.
-7. [Build dan distribusi](build-distribution.md) — build development, hot reload,
+8. [Build dan distribusi](build-distribution.md) — build development, hot reload,
    dan paket portable.
-8. [Pemecahan masalah](troubleshooting.md) — langkah awal untuk masalah umum.
+9. [Pemecahan masalah](troubleshooting.md) — langkah awal untuk masalah umum.
 
 ## Gambaran singkat
 

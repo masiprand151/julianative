@@ -44,11 +44,7 @@ export function Widget(props: WidgetProps): VNode {
   let position = props.position;
   if (props.fullscreen) {
     position = { x: 0, y: 0 };
-  } else if (
-    position === undefined ||
-    position === "top-left" ||
-    position === "top-right"
-  ) {
+  } else if (position === undefined) {
     position = props.hideTitleBar ? { x: 0, y: 0 } : { x: 0, y: 30 };
   }
 

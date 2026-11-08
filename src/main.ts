@@ -1,5 +1,12 @@
 import { Application, useState } from "@julia/core";
-import { Button, Card, Column, Text, Widget } from "@julia/core/components";
+import {
+  Button,
+  Card,
+  Column,
+  Grid,
+  Text,
+  Widget,
+} from "@julia/core/components";
 import { styles } from "./styles";
 
 function Main() {
@@ -9,7 +16,7 @@ function Main() {
     title: "JuliaNative",
     width: 520,
     height: 380,
-    position: "top-left",
+    position: "center",
     style: {
       padding: { top: 24, right: 24, bottom: 24, left: 24 },
       backgroundColor: "#f5f7f6",
@@ -22,27 +29,24 @@ function Main() {
           alignItems: "stretch",
         },
         children: [
-          Text("Selamat datang", {
+          Text("Welcome", {
             style: {
               fontSize: 24,
               fontWeight: "bold",
               color: "#193b35",
             },
           }),
-          Text("Aplikasi desktop sederhana dengan JuliaNative.", {
+          Text("Make a native app for everyone with JuliaNative", {
             style: { color: "#45635c" },
           }),
           Card({
-            title: "Penghitung",
+            title: "Counter",
             style: {
-              padding: { top: 16, right: 16, bottom: 16, left: 16 },
               backgroundColor: "#ffffff",
               borderColor: "#d5e0dc",
-              borderWidth: 1,
-              borderRadius: 8,
             },
             children: [
-              Text(`Count: ${count}`, {
+              Text(String(count), {
                 style: {
                   fontSize: 20,
                   fontWeight: "bold",
@@ -50,7 +54,7 @@ function Main() {
                 },
               }),
               Button({
-                text: "Tambah",
+                text: "add number",
                 onClick: () => setCount((currentCount) => currentCount + 1),
                 style: styles.primaryButton,
               }),

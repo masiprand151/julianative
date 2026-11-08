@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QBoxLayout>
+#include <QGridLayout>
 #include <QLayoutItem>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -177,6 +178,7 @@ public:
     QWidget *createView(const QJsonObject &data);
     QWidget *createRow(const QJsonObject &data);
     QWidget *createColumn(const QJsonObject &data);
+    QWidget *createGrid(const QJsonObject &data);
     QWidget *createFlexContainer(
         const QJsonObject &data,
         const QString &direction

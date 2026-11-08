@@ -12,6 +12,7 @@ import {
   Column,
   FlatList,
   FloatingActionButton,
+  Grid,
   Image,
   Modal,
   Row,
@@ -54,6 +55,21 @@ Koordinat `{ x, y }` menentukan posisi window secara langsung dan tidak
 diubah berdasarkan title bar. Posisi bernama menggunakan area layar yang
 tersedia (tidak menutupi taskbar/dock).
 
+Jika `position` tidak diisi, window memakai posisi default dekat kiri atas.
+Pada mode fullscreen, posisi diabaikan. Untuk memusatkan window:
+
+```ts
+Widget({
+  width: 720,
+  height: 480,
+  position: "center",
+  body: [],
+});
+```
+
+Callback window: `onResize(width, height)` menerima dimensi baru dalam piksel;
+`onClose`, `onMaximize`, dan `onMinimize` tidak menerima argumen.
+
 ### `View`, `Row`, dan `Column`
 
 - `View` adalah container umum; arahnya dapat diatur dengan `direction` atau
@@ -76,6 +92,29 @@ Column({
 });
 ```
 
+### `Grid`
+
+`Grid` menata anak dari kiri ke kanan, lalu melanjutkan ke baris berikutnya.
+`columns` menentukan jumlah kolom (default `2`), sedangkan `spacing` atau
+`gap` mengatur jarak baris dan kolom. Jaraknya juga dapat diatur terpisah
+dengan `rowGap` dan `columnGap`. `padding` dan `style` mengikuti pola layout
+lainnya.
+
+```ts
+Grid({
+  columns: 2,
+  rowGap: 12,
+  columnGap: 16,
+  children: [
+    Card({ title: "Satu", children: [Text("Konten satu")] }),
+    Card({ title: "Dua", children: [Text("Konten dua")] }),
+    Card({ title: "Tiga", children: [Text("Konten tiga")] }),
+  ],
+});
+```
+
+`columns` harus berupa bilangan bulat positif.
+
 ### `Text`
 
 Menerima string atau angka:
@@ -94,9 +133,24 @@ menyesuaikan container.
 Card({
   title: "Profil",
   children: [Text("Nama pengguna")],
-  style: { padding: 20 },
+  style: {
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#d5e0dc",
+    borderLeftWidth: 4,
+    borderLeftColor: "#147d72",
+  },
 });
 ```
+
+Border dapat diatur untuk semua sisi dengan `borderWidth`, `borderColor`,
+`borderStyle`, atau `border`. Untuk mengatur sisi tertentu, gunakan properti
+`borderTop`, `borderRight`, `borderBottom`, `borderLeft`, atau properti rinci
+seperti `borderBottomWidth`, `borderBottomColor`, dan `borderBottomStyle`.
+Pengaturan sisi tertentu akan mengesampingkan pengaturan border umum pada sisi
+tersebut.
+Jika hanya lebar border sisi tertentu yang diisi dan tidak ada gaya border
+umum, gaya sisi tersebut otomatis menjadi `solid`.
 
 ## Input dan aksi
 
@@ -184,11 +238,27 @@ Modal({
 });
 ```
 
+`visible` default-nya `false`; `title` default-nya string kosong. Perubahan
+visibility dilakukan dengan merender ulang `Modal` memakai nilai state baru.
+
 ## Tabel
 
 `Table` membuat tabel native. Kolom ditentukan melalui `columns`; setiap kolom
 memerlukan `key` dan `title`. `width` memberi lebar awal, `minWidth` memberi
 lebar minimum, dan `sortable` mengaktifkan pengurutan.
+
+Properti tabel:
+
+- `headerStyle`, `headerTextStyle`, `rowStyle`, dan `cellStyle` menyesuaikan
+  tampilan bagian tabel. Baris memiliki latar dan teks default.
+- `emptyComponent` menampilkan VNode atau hasil fungsi saat tidak ada baris.
+- `columns[].render(item, index)` membuat isi cell khusus.
+- `columns[].compare(left, right)` menyediakan pembanding khusus untuk
+  pengurutan kolom. Tanpa pembanding, angka diurutkan numerik dan nilai lain
+  sebagai teks, tanpa membedakan kapitalisasi.
+- Header kolom dapat diurutkan kecuali `sortable: false`; perubahan lebar kolom
+  dapat dilakukan dengan menyeret pembatas header. Lebar hasil resize bertahan
+  selama instance tabel tersebut hidup.
 
 ```ts
 Table({

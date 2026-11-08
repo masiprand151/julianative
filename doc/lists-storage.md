@@ -105,6 +105,16 @@ try {
 }
 ```
 
-Penyimpanan berada di direktori data pengguna, bukan otomatis di sebelah
-executable portable. Hindari menyimpan password atau rahasia tanpa mekanisme
-enkripsi yang sesuai.
+Generic `getItem<Settings>()` membantu pemeriksaan tipe saat compile saja; data
+yang dibaca dari file tidak divalidasi terhadap bentuk `Settings` pada runtime.
+Periksa nilai dari storage sebelum menggunakannya bila file dapat diubah di
+luar aplikasi atau skemanya berubah.
+
+Di Windows, file berada di direktori data aplikasi pengguna, umumnya di bawah
+`%APPDATA%\\JuliaNative\\JuliaNative\\local-storage.json`. Lokasi persisnya
+ditentukan oleh Qt dan dapat berbeda menurut platform. Data tidak otomatis
+disimpan di samping executable portable.
+
+Jika operasi gagal, promise ditolak. Tangani error dan periksa pesan beserta
+path file; jangan menyembunyikan error. Hindari menyimpan password atau
+rahasia tanpa mekanisme enkripsi yang sesuai.

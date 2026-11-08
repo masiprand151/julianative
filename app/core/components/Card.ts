@@ -5,6 +5,8 @@ import { View } from "./View";
 type CardProps = {
   title?: string;
   style?: StyleProps;
+  headerStyle?: StyleProps;
+  contentStyle?: StyleProps;
   children?: VNode[];
 };
 
@@ -14,7 +16,6 @@ export function Card(props: CardProps): VNode {
 
   return View({
     style: {
-      padding: 16,
       gap: 8,
       backgroundColor: "#ffffff",
       borderColor: "#e5e7eb",
@@ -23,14 +24,29 @@ export function Card(props: CardProps): VNode {
       ...props.style,
     },
     children: [
-      Text(title, {
+      View({
         style: {
-          fontSize: 18,
-          fontWeight: "bold",
-          color: "#193b35",
+          padding: { top: 8, right: 12, bottom: 8, left: 12 },
+          borderBottom: "2px solid #d5e0dc",
+          ...props.headerStyle,
         },
+        children: [
+          Text(title, {
+            style: {
+              fontSize: 18,
+              fontWeight: "bold",
+              color: "#193b35",
+            },
+          }),
+        ],
       }),
-      ...children,
+      View({
+        style: {
+          padding: { top: 0, right: 12, bottom: 12, left: 12 },
+          ...props.contentStyle,
+        },
+        children: children,
+      }),
     ],
   });
 }

@@ -75,6 +75,8 @@ QString JuliaRuntime::cssValue(const QString &property, const QJsonValue &value)
             "max-height", "margin", "margin-left", "margin-right",
             "margin-top", "margin-bottom", "padding", "padding-left",
             "padding-right", "padding-top", "padding-bottom", "border-width",
+            "border-top-width", "border-right-width", "border-bottom-width",
+            "border-left-width",
             "border-radius", "font-size", "letter-spacing"
         };
         return lengthProperties.contains(property) ? number + "px" : number;
@@ -85,6 +87,11 @@ QString JuliaRuntime::cssDeclarations(const QJsonObject &style, bool includePadd
         static const QSet<QString> supportedProperties = {
             "background", "background-color", "color", "border",
             "border-color", "border-width", "border-style", "border-radius",
+            "border-top", "border-right", "border-bottom", "border-left",
+            "border-top-color", "border-right-color", "border-bottom-color",
+            "border-left-color", "border-top-width", "border-right-width",
+            "border-bottom-width", "border-left-width", "border-top-style",
+            "border-right-style", "border-bottom-style", "border-left-style",
             "border-top-left-radius", "border-top-right-radius",
             "border-bottom-left-radius", "border-bottom-right-radius",
             "font", "font-family", "font-size", "font-weight", "font-style",
@@ -93,6 +100,14 @@ QString JuliaRuntime::cssDeclarations(const QJsonObject &style, bool includePadd
             "margin-right", "margin-top", "margin-bottom", "width", "height",
             "min-width", "min-height", "max-width", "max-height",
             "letter-spacing", "selection-color", "selection-background-color"
+        };
+        static const QSet<QString> borderProperties = {
+            "border", "border-color", "border-width", "border-style",
+            "border-top", "border-right", "border-bottom", "border-left",
+            "border-top-color", "border-right-color", "border-bottom-color",
+            "border-left-color", "border-top-width", "border-right-width",
+            "border-bottom-width", "border-left-width", "border-top-style",
+            "border-right-style", "border-bottom-style", "border-left-style"
         };
         QStringList declarations;
 
@@ -107,6 +122,7 @@ QString JuliaRuntime::cssDeclarations(const QJsonObject &style, bool includePadd
 
             const QString property = cssPropertyName(key);
             if (!supportedProperties.contains(property)) continue;
+            if (borderProperties.contains(property)) continue;
             if (!includePadding && property.startsWith("padding")) continue;
             const bool isGeometry =
                 property == "width" || property == "height" ||
@@ -156,6 +172,14 @@ QString JuliaRuntime::cssDeclarations(const QJsonObject &style, bool includePadd
             }
         }
 
+        const QString border = cssValue(
+            "border",
+            style.contains("border") ? style["border"] : QJsonValue()
+        );
+        if (!border.isEmpty()) {
+            declarations.append(QString("border: %1;").arg(border));
+        }
+
         if (style.contains("borderWidth") || style.contains("border-width")) {
             const QString width = cssValue(
                 "border-width",
@@ -177,6 +201,80 @@ QString JuliaRuntime::cssDeclarations(const QJsonObject &style, bool includePadd
             }
         }
 
+        const QString borderColor = style["borderColor"].toString(
+            style["border-color"].toString()
+        );
+        if (!borderColor.isEmpty()) {
+            declarations.append(
+                QString("border-color: %1;").arg(borderColor)
+            );
+        }
+
+        const QString borderStyle = style["borderStyle"].toString(
+            style["border-style"].toString()
+        );
+        if (!borderStyle.isEmpty()) {
+            declarations.append(
+                QString("border-style: %1;").arg(borderStyle)
+            );
+        }
+
+        static const QStringList borderSides = {
+            "top", "right", "bottom", "left"
+        };
+        for (const QString &side : borderSides) {
+            const QString property = "border-" + side;
+            const QString key = "border" + side.left(1).toUpper() + side.mid(1);
+            const QString value = cssValue(property, style[key]);
+            if (!value.isEmpty()) {
+                declarations.append(
+                    QString("%1: %2;").arg(property, value)
+                );
+            }
+        }
+
+        for (const QString &side : borderSides) {
+            const QString prefix = "border-" + side + "-";
+            const QString keyPrefix =
+                "border" + side.left(1).toUpper() + side.mid(1);
+            const QString widthKey = keyPrefix + "Width";
+            const QString widthProperty = prefix + "width";
+            for (const QString &attribute : {
+                     QString("width"),
+                     QString("style"),
+                     QString("color")
+                 })
+            {
+                const QString property = prefix + attribute;
+                const QString camelKey =
+                    keyPrefix + attribute.left(1).toUpper() + attribute.mid(1);
+                const QString key =
+                    style.contains(camelKey) ? camelKey : property;
+                if (!style.contains(key)) {
+                    if (attribute == "style" &&
+                        (style.contains(widthKey) ||
+                         style.contains(widthProperty)) &&
+                        !style.contains(keyPrefix) &&
+                        !style.contains("border") &&
+                        !style.contains("borderWidth") &&
+                        !style.contains("border-width") &&
+                        borderStyle.isEmpty())
+                    {
+                        declarations.append(
+                            QString("%1: solid;").arg(property)
+                        );
+                    }
+                    continue;
+                }
+                const QString value = cssValue(property, style[key]);
+                if (!value.isEmpty()) {
+                    declarations.append(
+                        QString("%1: %2;").arg(property, value)
+                    );
+                }
+            }
+        }
+
         return declarations.join('\n');
     }
 
@@ -185,9 +283,10 @@ QString JuliaRuntime::styleSheetFor(QWidget *widget, const QJsonObject &style, b
         const QString base = cssDeclarations(style, includePadding, true);
         const QString className = QString("juliaStyle%1")
             .arg(++styleObjectCounter);
-        QString result = QString("#%1 { %2 }\n").arg(className, base);
-        bool hasPseudoStyle = false;
-
+        QString result;
+        if (!base.isEmpty()) {
+            result = QString("#%1 { %2 }\n").arg(className, base);
+        }
         for (auto it = style.begin(); it != style.end(); ++it) {
             if (!it.key().startsWith(':') || !it.value().isObject()) continue;
             const QString state = it.key().mid(1);
@@ -205,11 +304,10 @@ QString JuliaRuntime::styleSheetFor(QWidget *widget, const QJsonObject &style, b
             const QString qtState = state == "active" ? "pressed" : state;
             result += QString("#%1:%2 { %3 }\n")
                 .arg(className, qtState, declarations);
-            hasPseudoStyle = true;
         }
 
-        if (!hasPseudoStyle) {
-            return base;
+        if (result.isEmpty()) {
+            return {};
         }
 
         widget->setObjectName(className);
