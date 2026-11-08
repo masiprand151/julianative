@@ -23,6 +23,10 @@ export function clearTableCallbacks(): void {
   resizeCallbacks.clear();
 }
 
+export function resetTableEventCounter(): void {
+  sortEventCounter = 0;
+}
+
 export function dispatchTableSort(
   id: string,
   columnIndex: number,

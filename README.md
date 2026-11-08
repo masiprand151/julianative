@@ -43,6 +43,10 @@ Widget({
 Use `useState` inside the root component to keep values between renders. Calling
 the setter re-renders the UI in the existing native window. State hooks must be
 called in the same order on every render.
+When a render changes only `Text`, `Button` text, or `TextInput` value, the
+native renderer updates those widgets in place. This preserves input focus and
+avoids rebuilding the rest of the window. Structural changes still rebuild the
+native view tree.
 
 ```ts
 function Main() {

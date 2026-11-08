@@ -1,3 +1,4 @@
+import { useState } from "@julia/core";
 import { StackHeaderProps } from "../../app/core/navigation";
 import { RootStackParamList } from "./types";
 import { Button, Row, Text } from "@julia/core/components";
@@ -7,6 +8,8 @@ export function AppHeader({
   title,
   canGoBack,
 }: StackHeaderProps<RootStackParamList>) {
+  const [isFavorite, setIsFavorite] = useState(false);
+
   return Row({
     style: {
       gap: 12,
@@ -36,6 +39,17 @@ export function AppHeader({
           color: "#ffffff",
           fontSize: 18,
           fontWeight: "bold",
+        },
+      }),
+      Button({
+        text: isFavorite ? "★" : "☆",
+        onClick: () => setIsFavorite((current) => !current),
+        style: {
+          padding: "8px",
+          color: "#ffffff",
+          backgroundColor: "#347665",
+          borderRadius: "6px",
+          cursor: "pointer",
         },
       }),
     ],

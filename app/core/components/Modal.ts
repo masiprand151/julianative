@@ -4,6 +4,10 @@ let eventCounter = 0;
 
 const closeCallbacks = new Map<string, () => void>();
 
+export function resetModalEventCounter(): void {
+  eventCounter = 0;
+}
+
 export function clearModalCallbacks(): void {
   closeCallbacks.clear();
 }

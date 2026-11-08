@@ -9,21 +9,122 @@ import { dispatchTableResize, dispatchTableSort } from "./components/Table";
 import { dispatchWidgetEvent } from "./components/Widget";
 
 // Mengubah VNode menjadi JSON untuk dikirim ke C++.
-function serialize(node: VNode): any {
+function serialize(node: VNode, nodeId: string): any {
   return {
     type: node.type,
+    nodeId,
     props: node.props,
     events: node.events || {},
-    children: (node.children || []).map(serialize),
+    children: (node.children || []).map((child, index) =>
+      serialize(child, `${nodeId}.${index}`),
+    ),
   };
+}
+
+type LeafPatch = {
+  nodeId: string;
+  type: "Text" | "TextInput" | "Button";
+  value: string;
+};
+
+let previousTree: any;
+
+function sameValue(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function leafTextProperty(
+  type: string,
+): { property: string; patchType: LeafPatch["type"] } | undefined {
+  if (type === "Text" || type === "Button") {
+    return { property: "text", patchType: type };
+  }
+  if (type === "TextInput") {
+    return { property: "value", patchType: type };
+  }
+  return undefined;
+}
+
+function collectLeafPatches(
+  previous: any,
+  next: any,
+  patches: LeafPatch[],
+  insideUnsupportedNode = false,
+): boolean {
+  if (
+    previous.type !== next.type ||
+    previous.events === undefined ||
+    !sameValue(previous.events, next.events) ||
+    previous.children.length !== next.children.length
+  ) {
+    return false;
+  }
+
+  const unsupportedDescendants =
+    insideUnsupportedNode ||
+    ["Table", "Modal", "Video", "Image", "FloatingActionButton"].includes(
+      next.type,
+    );
+  const previousProps = previous.props ?? {};
+  const nextProps = next.props ?? {};
+  const keys = new Set([
+    ...Object.keys(previousProps),
+    ...Object.keys(nextProps),
+  ]);
+  const changedKeys = [...keys].filter(
+    (key) => !sameValue(previousProps[key], nextProps[key]),
+  );
+
+  if (changedKeys.length > 0) {
+    const leaf = leafTextProperty(next.type);
+    if (
+      unsupportedDescendants ||
+      leaf === undefined ||
+      changedKeys.some((key) => key !== leaf.property)
+    ) {
+      return false;
+    }
+
+    patches.push({
+      nodeId: next.nodeId,
+      type: leaf.patchType,
+      value: String(nextProps[leaf.property] ?? ""),
+    });
+  }
+
+  for (let index = 0; index < previous.children.length; index++) {
+    if (
+      !collectLeafPatches(
+        previous.children[index],
+        next.children[index],
+        patches,
+        unsupportedDescendants,
+      )
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Mengirim UI ke native runtime.
 export function render(root: VNode): void {
-  const result = serialize(root);
-  const output = JSON.stringify(result);
+  const result = serialize(root, "root");
+  let message: any = result;
 
-  process.stdout.write("__JULIA_UI__" + output + "\n");
+  if (previousTree) {
+    const patches: LeafPatch[] = [];
+    if (collectLeafPatches(previousTree, result, patches)) {
+      if (patches.length === 0) {
+        previousTree = result;
+        return;
+      }
+      message = { type: "patch", updates: patches };
+    }
+  }
+
+  previousTree = result;
+  process.stdout.write("__JULIA_UI__" + JSON.stringify(message) + "\n");
 }
 
 // Menerima event dari native C++.

@@ -3,6 +3,10 @@ import { FloatingActionButtonProps, VNode } from "../types";
 let eventCounter = 0;
 const pressCallbacks = new Map<string, () => void>();
 
+export function resetFloatingActionButtonEventCounter(): void {
+  eventCounter = 0;
+}
+
 export function clearFloatingActionButtonCallbacks(): void {
   pressCallbacks.clear();
 }

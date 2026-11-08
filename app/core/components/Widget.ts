@@ -4,6 +4,10 @@ let eventCounter = 0;
 
 const widgetCallbacks = new Map<string, (...args: number[]) => void>();
 
+export function resetWidgetEventCounter(): void {
+  eventCounter = 0;
+}
+
 export function clearWidgetCallbacks(): void {
   widgetCallbacks.clear();
 }

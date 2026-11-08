@@ -4,6 +4,10 @@ let eventCounter = 0;
 
 const changeCallbacks = new Map<string, (value: string) => void>();
 
+export function resetTextInputEventCounter(): void {
+  eventCounter = 0;
+}
+
 export function clearTextInputCallbacks(): void {
   changeCallbacks.clear();
 }

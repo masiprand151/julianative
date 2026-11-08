@@ -7,9 +7,21 @@
         "C:/msys64/ucrt64/include/qt6",
         "C:/msys64/ucrt64/include/qt6/QtCore",
         "C:/msys64/ucrt64/include/qt6/QtGui",
-        "C:/msys64/ucrt64/include/qt6/QtWidgets"
+        "C:/msys64/ucrt64/include/qt6/QtWidgets",
+        "C:/msys64/ucrt64/include/qt6/QtNetwork",
+        "C:/msys64/ucrt64/include/qt6/QtSvg",
+        "C:/msys64/ucrt64/include/qt6/QtMultimedia",
+        "C:/msys64/ucrt64/include/qt6/QtMultimediaWidgets"
       ],
-      "defines": ["QT_WIDGETS_LIB", "QT_GUI_LIB", "QT_CORE_LIB"],
+      "defines": [
+        "QT_WIDGETS_LIB",
+        "QT_GUI_LIB",
+        "QT_CORE_LIB",
+        "QT_NETWORK_LIB",
+        "QT_SVG_LIB",
+        "QT_MULTIMEDIA_LIB",
+        "QT_MULTIMEDIAWIDGETS_LIB"
+      ],
       "compilerPath": "C:/msys64/ucrt64/bin/g++.exe",
       "cStandard": "c17",
       "cppStandard": "c++17",

@@ -16,6 +16,7 @@ const {
 const {
   beginStateRender,
   finishStateRender,
+  useState,
 } = require("../app/build/app/core/state.js");
 
 test("Stack Navigator supports push, navigate, back, replace, and popToTop", async () => {
@@ -202,10 +203,14 @@ test("Stack Navigator supports styled and custom headers", async () => {
       screenOptions: {
         headerComponent: (props) => {
           receivedHeaderProps = props;
+          const [isFavorite, setIsFavorite] = useState(false);
           return {
             type: "Row",
             children: [
               TextButton("Custom back", props.navigation.goBack),
+              TextButton(isFavorite ? "★" : "☆", () =>
+                setIsFavorite((current) => !current),
+              ),
               Text(props.title),
             ],
           };
@@ -226,6 +231,14 @@ test("Stack Navigator supports styled and custom headers", async () => {
   assert.equal(headerContainer.props.style.padding, 14);
   assert.equal(receivedHeaderProps.title, "Home");
   assert.equal(receivedHeaderProps.canGoBack, false);
+  const favoriteButton = findNode(
+    tree,
+    (node) => node.props?.text === "☆",
+  );
+  dispatchEvent(favoriteButton.events.click);
+  await Promise.resolve();
+  tree = render();
+  assert.ok(findNode(tree, (node) => node.props?.text === "★"));
 
   const openDetails = findNode(
     tree,

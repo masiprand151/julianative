@@ -25,6 +25,10 @@ find_package(Qt6 REQUIRED COMPONENTS
 
 set(APP_SOURCES
     app/main.cpp
+    app/JuliaRuntime.cpp
+    app/Style.cpp
+    app/Media.cpp
+    app/UiRenderer.cpp
 )
 
 # ---- release remove comments ----

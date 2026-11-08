@@ -4,6 +4,10 @@ let eventCounter = 0;
 
 const eventCallbacks = new Map<string, () => void>();
 
+export function resetButtonEventCounter(): void {
+  eventCounter = 0;
+}
+
 export function clearButtonCallbacks(): void {
   eventCallbacks.clear();
 }

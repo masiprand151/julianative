@@ -6,12 +6,30 @@ import {
   finishStateRender,
   setStateRenderCallback,
 } from "./state";
-import { clearButtonCallbacks } from "./components/Button";
-import { clearFloatingActionButtonCallbacks } from "./components/FloatingActionButton";
-import { clearModalCallbacks } from "./components/Modal";
-import { clearTextInputCallbacks } from "./components/TextInput";
-import { clearTableCallbacks } from "./components/Table";
-import { clearWidgetCallbacks } from "./components/Widget";
+import {
+  clearButtonCallbacks,
+  resetButtonEventCounter,
+} from "./components/Button";
+import {
+  clearFloatingActionButtonCallbacks,
+  resetFloatingActionButtonEventCounter,
+} from "./components/FloatingActionButton";
+import {
+  clearModalCallbacks,
+  resetModalEventCounter,
+} from "./components/Modal";
+import {
+  clearTextInputCallbacks,
+  resetTextInputEventCounter,
+} from "./components/TextInput";
+import {
+  clearTableCallbacks,
+  resetTableEventCounter,
+} from "./components/Table";
+import {
+  clearWidgetCallbacks,
+  resetWidgetEventCounter,
+} from "./components/Widget";
 
 // Mengatur ulang console.log untuk mengirim pesan ke stderr.
 function setupConsole(): void {
@@ -46,6 +64,12 @@ export class Application {
       clearTableCallbacks();
       clearTextInputCallbacks();
       clearWidgetCallbacks();
+      resetButtonEventCounter();
+      resetFloatingActionButtonEventCounter();
+      resetModalEventCounter();
+      resetTextInputEventCounter();
+      resetTableEventCounter();
+      resetWidgetEventCounter();
 
       try {
         render(main());
