@@ -1,4 +1,5 @@
 #include "JuliaRuntime.h"
+#include <QScreen>
 
 QWidget *JuliaRuntime::createNode(const QJsonObject &data)
 {
@@ -1096,13 +1097,25 @@ void JuliaRuntime::renderUI(const QByteArray &json)
     const bool windowSizeChanged =
         !hasAppliedWindowSize || requestedSize != lastAppliedWindowSize;
 
-    hasRequestedPosition = props["position"].isObject();
+    requestedPositionMode =
+        props["position"].isString()
+            ? props["position"].toString()
+            : QString();
+    hasRequestedPosition =
+        props["position"].isObject() ||
+        requestedPositionMode == "center" ||
+        requestedPositionMode == "top-left" ||
+        requestedPositionMode == "top-right" ||
+        requestedPositionMode == "bottom-left" ||
+        requestedPositionMode == "bottom-right";
     if (hasRequestedPosition) {
-        const QJsonObject position = props["position"].toObject();
-        requestedPosition = QPoint(
-            position["x"].toInt(),
-            position["y"].toInt()
-        );
+        if (props["position"].isObject()) {
+            const QJsonObject position = props["position"].toObject();
+            requestedPosition = QPoint(
+                position["x"].toInt(),
+                position["y"].toInt()
+            );
+        }
     }
 
     const bool alwaysOnTop = props["alwaysOnTop"].toBool(false);
@@ -1234,12 +1247,49 @@ void JuliaRuntime::renderUI(const QByteArray &json)
     positionFloatingActionButtons();
     const bool positionChanged =
         hasRequestedPosition &&
-        (!hasAppliedPosition || requestedPosition != lastAppliedPosition);
+        (!hasAppliedPosition ||
+         requestedPositionMode != lastAppliedPositionMode ||
+         (requestedPositionMode.isEmpty() &&
+          requestedPosition != lastAppliedPosition));
     if (hasRequestedPosition &&
-        (positionChanged || windowFlagsChanged || leavingFullscreen))
+        (positionChanged || windowFlagsChanged || leavingFullscreen ||
+         (!requestedPositionMode.isEmpty() && windowSizeChanged)))
     {
-        window->windowHandle()->setPosition(requestedPosition);
-        lastAppliedPosition = requestedPosition;
+        QPoint position = requestedPosition;
+        if (!requestedPositionMode.isEmpty()) {
+            QScreen *screen = window->screen();
+            if (!screen) screen = QGuiApplication::primaryScreen();
+            if (screen) {
+                const QRect available = screen->availableGeometry();
+                const QSize frameSize = window->frameGeometry().size();
+                if (requestedPositionMode == "center") {
+                    position = available.center() -
+                        QPoint(frameSize.width() / 2, frameSize.height() / 2);
+                } else if (requestedPositionMode == "top-left") {
+                    position = available.topLeft();
+                } else if (requestedPositionMode == "top-right") {
+                    position = QPoint(
+                        available.right() - frameSize.width() + 1,
+                        available.top()
+                    );
+                } else if (requestedPositionMode == "bottom-left") {
+                    position = QPoint(
+                        available.left(),
+                        available.bottom() - frameSize.height() + 1
+                    );
+                } else if (requestedPositionMode == "bottom-right") {
+                    position = QPoint(
+                        available.right() - frameSize.width() + 1,
+                        available.bottom() - frameSize.height() + 1
+                    );
+                }
+            } else {
+                qWarning() << "Could not determine a screen for window placement.";
+            }
+        }
+        window->windowHandle()->setPosition(position);
+        lastAppliedPosition = position;
+        lastAppliedPositionMode = requestedPositionMode;
         hasAppliedPosition = true;
     }
     lastWindowState = window->windowState();

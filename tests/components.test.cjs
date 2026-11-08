@@ -501,7 +501,7 @@ test("TextInput dispatches its changed value", () => {
   assert.equal(changedValue, "updated");
 });
 
-test("Widget does not mutate props when applying its default position", () => {
+test("Widget preserves explicit coordinates when the title bar is visible", () => {
   const props = {
     position: { x: 12, y: 80 },
     hideTitleBar: false,
@@ -510,7 +510,13 @@ test("Widget does not mutate props when applying its default position", () => {
   const widget = Widget(props);
 
   assert.deepEqual(props.position, { x: 12, y: 80 });
-  assert.deepEqual(widget.props.position, { x: 12, y: 30 });
+  assert.deepEqual(widget.props.position, { x: 12, y: 80 });
+});
+
+test("Widget accepts named screen positions", () => {
+  const widget = Widget({ position: "center", body: [] });
+
+  assert.equal(widget.props.position, "center");
 });
 
 test("Widget fullscreen position takes precedence without mutating props", () => {

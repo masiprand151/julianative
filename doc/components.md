@@ -48,6 +48,12 @@ Widget({
 });
 ```
 
+`position` dapat berupa koordinat layar `{ x, y }` atau `"center"`,
+`"top-left"`, `"top-right"`, `"bottom-left"`, dan `"bottom-right"`.
+Koordinat `{ x, y }` menentukan posisi window secara langsung dan tidak
+diubah berdasarkan title bar. Posisi bernama menggunakan area layar yang
+tersedia (tidak menutupi taskbar/dock).
+
 ### `View`, `Row`, dan `Column`
 
 - `View` adalah container umum; arahnya dapat diatur dengan `direction` atau

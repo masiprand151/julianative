@@ -42,13 +42,14 @@ export function Widget(props: WidgetProps): VNode {
   }
 
   let position = props.position;
-
-  if (!props.hideTitleBar) {
-    position = { x: position?.x ?? 0, y: 30 };
-  }
-
   if (props.fullscreen) {
     position = { x: 0, y: 0 };
+  } else if (
+    position === undefined ||
+    position === "top-left" ||
+    position === "top-right"
+  ) {
+    position = props.hideTitleBar ? { x: 0, y: 0 } : { x: 0, y: 30 };
   }
 
   return {
@@ -57,7 +58,7 @@ export function Widget(props: WidgetProps): VNode {
       title: props.title ?? "Julia Native",
       width: style.width ?? props.width ?? 400,
       height: style.height ?? props.height ?? 300,
-      position: position ?? { x: 0, y: 0 },
+      position,
       resizable: props.resizable ?? true,
       fullscreen: props.fullscreen ?? false,
       hideTitleBar: props.hideTitleBar ?? false,

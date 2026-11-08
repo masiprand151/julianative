@@ -101,6 +101,8 @@ public:
     bool applyingWindowProps = false;
     bool hasAppliedPosition = false;
     QPoint lastAppliedPosition;
+    QString lastAppliedPositionMode;
+    QString requestedPositionMode;
     QPoint requestedPosition;
     bool hasRequestedPosition = false;
     bool hasAppliedWindowSize = false;

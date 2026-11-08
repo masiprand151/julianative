@@ -25,7 +25,10 @@ always-on-top, and optional content scrolling. Fullscreen uses the native
 fullscreen mode, which hides the title bar; `hideTitleBar` independently hides
 the title bar while the window is not fullscreen. Its `onClose`, `onResize`,
 `onMaximize`, and `onMinimize` callbacks are invoked for corresponding native
-window events.
+window events. `position` accepts exact `{ x, y }` screen coordinates or
+`"center"`, `"top-left"`, `"top-right"`, `"bottom-left"`, and `"bottom-right"`.
+Named positions use the available screen area. If omitted, the current default
+position is retained.
 
 ```ts
 Widget({
@@ -176,9 +179,8 @@ The custom header receives `navigation`, `route`, `title`, and `canGoBack`.
 Set `headerComponent` in `screenOptions` for every screen, or in one screen's
 `options` to customize that screen only. `headerStyle` styles the container
 around a custom header and also overrides the built-in header's default style.
-For larger apps, keep the navigator and `Widget` in `src/main.ts`, define the
-route params in `src/navigation/types.ts`, and export each screen from its own
-file under `src/screens/`.
+For larger apps, keep the navigator and `Widget` in `src/main.ts`, define route
+params in a dedicated type module, and export each screen from its own file.
 
 ## StyleSheet
 

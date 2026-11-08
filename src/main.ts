@@ -1,113 +1,62 @@
-import {
-  Application,
-  createStackNavigator,
-  LocalStorage,
-  useEffect,
-  useState,
-} from "@julia/core";
-import { Widget } from "@julia/core/components";
-import { DetailsScreen } from "./screens/DetailsScreen";
-import { HomeScreen } from "./screens/HomeScreen";
-import { ProfileScreen } from "./screens/ProfileScreen";
-import { SettingsScreen } from "./screens/SettingsScreen";
-import { AppHeader } from "./navigation/AppHeader";
-import { RootStackParamList } from "./navigation/types";
-
-const Stack = createStackNavigator<RootStackParamList>();
-
-const windowStyle = {
-  padding: 18,
-  gap: 12,
-  backgroundColor: "#f5f7f6",
-};
-
-const headerStyle = {
-  margin: 6,
-  padding: 6,
-  backgroundColor: "#dce9e5",
-  borderRadius: 10,
-};
+import { Application, useState } from "@julia/core";
+import { Button, Card, Column, Text, Widget } from "@julia/core/components";
+import { styles } from "./styles";
 
 function Main() {
   const [count, setCount] = useState(0);
-  const [countLoaded, setCountLoaded] = useState(false);
-  const [email, setEmail] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    LocalStorage.getItem("home-count")
-      .then((savedCount) => {
-        if (!active) return;
-        if (typeof savedCount === "number" && Number.isFinite(savedCount)) {
-          setCount(savedCount);
-        }
-        setCountLoaded(true);
-      })
-      .catch((error) => {
-        console.error("Could not load saved count:", error);
-        if (active) setCountLoaded(true);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!countLoaded) return;
-
-    LocalStorage.setItem("home-count", count).catch((error) => {
-      console.error("Could not save count:", error);
-    });
-  }, [count, countLoaded]);
 
   return Widget({
-    title: "Style Test",
-    width: 1024,
-    height: 768,
-    onClose: () => console.log("Window closed"),
-    onResize: (width, height) =>
-      console.log(`Window resized: ${width}x${height}`),
-    onMaximize: () => console.log("Window maximized"),
-    onMinimize: () => console.log("Window minimized"),
-    style: windowStyle,
+    title: "JuliaNative",
+    width: 520,
+    height: 380,
+    position: "top-left",
+    style: {
+      padding: { top: 24, right: 24, bottom: 24, left: 24 },
+      backgroundColor: "#f5f7f6",
+    },
     body: [
-      Stack.Navigator({
-        initialRouteName: "Home",
-        screenOptions: {
-          headerComponent: AppHeader,
-          headerStyle,
+      Column({
+        style: {
+          gap: 20,
+          padding: { top: 12, right: 12, bottom: 12, left: 12 },
+          alignItems: "stretch",
         },
-        screens: {
-          Home: {
-            options: { title: "Beranda" },
-            component: ({ navigation }) =>
-              HomeScreen({
-                navigation,
-                state: {
-                  count,
-                  setCount,
-                  email,
-                  setEmail,
-                  modalVisible,
-                  setModalVisible,
+        children: [
+          Text("Selamat datang", {
+            style: {
+              fontSize: 24,
+              fontWeight: "bold",
+              color: "#193b35",
+            },
+          }),
+          Text("Aplikasi desktop sederhana dengan JuliaNative.", {
+            style: { color: "#45635c" },
+          }),
+          Card({
+            title: "Penghitung",
+            style: {
+              padding: { top: 16, right: 16, bottom: 16, left: 16 },
+              backgroundColor: "#ffffff",
+              borderColor: "#d5e0dc",
+              borderWidth: 1,
+              borderRadius: 8,
+            },
+            children: [
+              Text(`Count: ${count}`, {
+                style: {
+                  fontSize: 20,
+                  fontWeight: "bold",
+                  color: "#193b35",
                 },
               }),
-          },
-          Profile: {
-            options: { title: "Profil" },
-            component: (props) => ProfileScreen(props),
-          },
-          Settings: {
-            options: { title: "Pengaturan" },
-            component: (props) => SettingsScreen(props),
-          },
-          Details: {
-            options: { title: "Detail" },
-            component: (props) => DetailsScreen(props),
-          },
-        },
+              Button({
+                text: "Tambah",
+                onClick: () => setCount((currentCount) => currentCount + 1),
+                style: styles.primaryButton,
+              }),
+            ],
+          }),
+        ],
       }),
     ],
   });

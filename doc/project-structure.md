@@ -4,9 +4,7 @@ Berikut bagian proyek yang paling sering disentuh saat mengembangkan aplikasi.
 
 | Path | Kegunaan |
 | --- | --- |
-| `src/main.ts` | Entry point UI: membuat jendela utama dan menjalankan aplikasi. |
-| `src/screens/` | Modul layar aplikasi, misalnya `HomeScreen.ts`. |
-| `src/navigation/` | Tipe route dan komponen navigasi aplikasi. |
+| `src/main.ts` | Entry point dan layar utama; membuat komponen lalu menjalankan aplikasi. |
 | `src/styles.ts` | Contoh style bersama untuk aplikasi. |
 | `app/core/components/` | Fungsi pembuat VNode untuk komponen UI. |
 | `app/core/types/` | Tipe properti, style, dan node UI. |
@@ -32,24 +30,24 @@ Berikut bagian proyek yang paling sering disentuh saat mengembangkan aplikasi.
 6. Perubahan state memicu render ulang. Perubahan teks tertentu dapat
    diterapkan sebagai patch tanpa membangun ulang seluruh window.
 
-## Memisahkan layar
+## Entry point aplikasi
 
-Untuk aplikasi dengan beberapa layar, jaga `src/main.ts` tetap berisi
-konfigurasi aplikasi dan navigasi, kemudian letakkan isi layar di
-`src/screens/`.
+Saat ini contoh aplikasi menyusun tampilan utama langsung di `src/main.ts`.
+State UI dan efek samping seperti pemuatan data lokal juga dikelola di fungsi
+`Main()`. Pola ini cocok untuk aplikasi kecil atau contoh komponen.
 
-Contoh prop layar yang dikelompokkan:
+Jika aplikasi berkembang, UI dapat dipisahkan ke modul komponen atau screen
+tersendiri dan diimpor dari `main.ts`. Contoh prop dengan object:
 
 ```ts
-interface HomeScreenProps {
-  navigation: StackNavigation<AppRoutes>;
+interface DashboardProps {
   state: {
     count: number;
     setCount: StateSetter<number>;
   };
 }
 
-export function HomeScreen({ navigation, state }: HomeScreenProps) {
+function Dashboard({ state }: DashboardProps) {
   return Text(`Jumlah: ${state.count}`);
 }
 ```

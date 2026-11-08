@@ -30,7 +30,13 @@ export interface WidgetProps {
   title?: string;
   width?: number;
   height?: number;
-  position?: { x: number; y: number };
+  position?:
+    | { x: number; y: number }
+    | "center"
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right";
   resizable?: boolean;
   fullscreen?: boolean;
   hideTitleBar?: boolean;
@@ -244,9 +250,7 @@ export interface FlatListProps<T> {
   estimatedItemSize?: number;
   initialNumToRender?: number;
   overscan?: number;
-  ItemSeparatorComponent?: (
-    info: FlatListSeparatorInfo<T>,
-  ) => VNode;
+  ItemSeparatorComponent?: (info: FlatListSeparatorInfo<T>) => VNode;
   ListEmptyComponent?: VNode | (() => VNode);
   style?: StyleProps;
   contentContainerStyle?: StyleProps;
