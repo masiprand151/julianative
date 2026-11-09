@@ -10,10 +10,6 @@ function Main() {
     width: 520,
     height: 380,
     position: "center",
-    style: {
-      padding: { top: 24, right: 24, bottom: 24, left: 24 },
-      backgroundColor: "#f5f7f6",
-    },
     body: [
       Column({
         style: {
