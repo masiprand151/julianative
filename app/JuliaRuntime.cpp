@@ -1,6 +1,19 @@
 #include "JuliaRuntime.h"
 #include <QGuiApplication>
 #include <QScreen>
+#include <QSysInfo>
+#include <QThread>
+#include <QSettings>
+#include <QLocale>
+#include <QTimeZone>
+
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 
 // Constructor: menyiapkan window dan koneksi komunikasi Node.js.
 JuliaRuntime::JuliaRuntime()
@@ -112,7 +125,142 @@ JuliaRuntime::JuliaRuntime()
                                 QJsonDocument(response)
                                     .toJson(QJsonDocument::Compact) + "\n"
                             );
-                        }
+                        } else 
+                        // get a system information from the host machine
+                            if (command.startsWith("system.")) {
+
+                                QJsonValue result;
+                                QString error;
+                                bool success = true;
+
+                                if (command == "system.getPlatform") {
+
+                            #ifdef Q_OS_WIN
+                                    result = "windows";
+                            #elif defined(Q_OS_MACOS)
+                                    result = "macos";
+                            #elif defined(Q_OS_LINUX)
+                                    result = "linux";
+                            #else
+                                    result = "unknown";
+                            #endif
+
+                                } else if (command == "system.getOSVersion") {
+
+                                    result = QSysInfo::prettyProductName();
+
+                                } else if (command == "system.getHostname") {
+
+                                    result = QSysInfo::machineHostName();
+
+                                } else if (command == "system.getLocale") {
+
+                                    result = QLocale().name();
+
+                                } else if (command == "system.getTimeZone") {
+
+                                    result = QString::fromUtf8(
+                                        QTimeZone::systemTimeZoneId()
+                                    );
+
+                                } else if (command == "system.getCPUInfo") {
+
+                                    QString model = QSysInfo::currentCpuArchitecture();
+
+                            #ifdef Q_OS_WIN
+                                    QSettings cpuRegistry(
+                                        "HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                                        QSettings::NativeFormat
+                                    );
+
+                                    const QString registryModel =
+                                        cpuRegistry.value("ProcessorNameString").toString().trimmed();
+
+                                    if (!registryModel.isEmpty()) {
+                                        model = registryModel;
+                                    }
+                            #endif
+
+                                    QJsonObject cpu;
+                                    cpu["model"] = model;
+                                    cpu["cores"] = QThread::idealThreadCount();
+                                    cpu["architecture"] = QSysInfo::currentCpuArchitecture();
+
+                                    result = cpu;
+
+                                } else if (command == "system.getMemoryInfo") {
+
+                            #ifdef Q_OS_WIN
+                                    MEMORYSTATUSEX memoryStatus = {};
+                                    memoryStatus.dwLength = sizeof(memoryStatus);
+
+                                    if (GlobalMemoryStatusEx(&memoryStatus)) {
+
+                                        const quint64 total = memoryStatus.ullTotalPhys;
+                                        const quint64 free = memoryStatus.ullAvailPhys;
+
+                                        QJsonObject memory;
+                                        memory["total"] = static_cast<double>(total);
+                                        memory["free"] = static_cast<double>(free);
+                                        memory["used"] = static_cast<double>(total - free);
+
+                                        result = memory;
+
+                                    } else {
+                                        success = false;
+                                        error = "Failed to get memory information.";
+                                    }
+                            #else
+                                    success = false;
+                                    error = "Memory information is not implemented for this platform.";
+                            #endif
+
+                                } else if (command == "system.getSystemInfo") {
+
+                                    QJsonObject system;
+
+                            #ifdef Q_OS_WIN
+                                    system["platform"] = "windows";
+                            #elif defined(Q_OS_MACOS)
+                                    system["platform"] = "macos";
+                            #elif defined(Q_OS_LINUX)
+                                    system["platform"] = "linux";
+                            #else
+                                    system["platform"] = "unknown";
+                            #endif
+
+                                    system["osVersion"] = QSysInfo::prettyProductName();
+                                    system["hostname"] = QSysInfo::machineHostName();
+                                    system["architecture"] = QSysInfo::currentCpuArchitecture();
+                                    system["locale"] = QLocale().name();
+                                    system["timeZone"] = QString::fromUtf8(
+                                        QTimeZone::systemTimeZoneId()
+                                    );
+
+                                    result = system;
+
+                                } else {
+
+                                    success = false;
+                                    error = "Unknown system command: " + command;
+                                }
+
+                                QJsonObject response;
+                                response["type"] = "nativeResponse";
+                                response["requestId"] = message["requestId"];
+                                response["success"] = success;
+
+                                if (success) {
+                                    response["data"] = result;
+                                } else {
+                                    response["error"] = error;
+                                }
+
+                                node->write(
+                                    QJsonDocument(response).toJson(QJsonDocument::Compact) + "\n"
+                                );
+                            }
+
 
                     } else if (type == "patch") {
                         applyLeafPatches(message);

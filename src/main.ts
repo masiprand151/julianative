@@ -4,7 +4,19 @@ import { styles } from "./styles";
 
 function Main() {
   const [count, setCount] = useState(0);
+  async function test() {
+    const platform = await Application.system.getPlatform();
+    const os = await Application.system.getOSVersion();
+    const cpu = await Application.system.getCPUInfo();
+    const memory = await Application.system.getMemoryInfo();
 
+    console.log(platform);
+    console.log(os);
+    console.log(cpu);
+    console.log(memory);
+  }
+
+  test();
   return Builder({
     title: "JuliaNative",
     width: 520,

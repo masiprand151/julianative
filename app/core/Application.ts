@@ -129,6 +129,7 @@ import {
   clearWidgetCallbacks,
   resetWidgetEventCounter,
 } from "./components/Widget";
+import { System } from "./system";
 
 export interface Screen {
   id: number;
@@ -152,6 +153,8 @@ export class Application {
   private static requestCounter = 0;
 
   private static pendingRequests = new Map<string, PendingRequest>();
+
+  static system = System;
 
   static sendToNative(message: any): void {
     const output = JSON.stringify(message);

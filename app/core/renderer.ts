@@ -10,6 +10,7 @@ import { dispatchWidgetEvent } from "./components/Widget";
 import { requestRender, withStateScope } from "./state";
 import { handleStorageResponse } from "./localStorage";
 import { Application } from "./Application";
+import { handleNativeResponse } from "./NativeBridge";
 
 type ListViewport = { offset: number; viewportSize: number };
 type VirtualListConfig = {
@@ -573,9 +574,10 @@ export function listenNativeEvents(): void {
           );
         } else if (message.type === "storageResponse") {
           handleStorageResponse(message);
-        }
-        if (message.type === "screensResponse") {
+        } else if (message.type === "screensResponse") {
           Application.handleNativeResponse(message);
+        } else if (message.type === "nativeResponse") {
+          handleNativeResponse(message);
         }
       } catch (error) {
         console.error("Native event error:", error);
