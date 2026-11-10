@@ -6,6 +6,7 @@
 #include <QSettings>
 #include <QLocale>
 #include <QTimeZone>
+#include <QClipboard>
 
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
@@ -70,7 +71,52 @@ JuliaRuntime::JuliaRuntime()
                         {
                             closeAuthorized = true;
                             window->close();
+                        } 
+                        // Jika perintah terkait clipboard, lakukan operasi yang sesuai.
+                        else if (command.startsWith("clipboard.")) {
+
+                            QJsonValue result;
+                            QString error;
+                            bool success = true;
+
+                            QClipboard *clipboard = QGuiApplication::clipboard();
+
+                            if (command == "clipboard.getText") {
+
+                                result = clipboard->text();
+
+                            } else if (command == "clipboard.setText") {
+
+                                clipboard->setText(message["text"].toString());
+                                result = true;
+
+                            } else if (command == "clipboard.clear") {
+
+                                clipboard->clear();
+                                result = true;
+
+                            } else {
+
+                                success = false;
+                                error = "Unknown clipboard command: " + command;
+                            }
+
+                            QJsonObject response;
+                            response["type"] = "nativeResponse";
+                            response["requestId"] = message["requestId"];
+                            response["success"] = success;
+
+                            if (success) {
+                                response["data"] = result;
+                            } else {
+                                response["error"] = error;
+                            }
+
+                            node->write(
+                                QJsonDocument(response).toJson(QJsonDocument::Compact) + "\n"
+                            );
                         }
+                        // get a information screens from the host machine
                         else if (command == "screens") {
 
                             QJsonArray screensArray;
@@ -125,7 +171,7 @@ JuliaRuntime::JuliaRuntime()
                                 QJsonDocument(response)
                                     .toJson(QJsonDocument::Compact) + "\n"
                             );
-                        } else 
+                        } else
                         // get a system information from the host machine
                             if (command.startsWith("system.")) {
 
