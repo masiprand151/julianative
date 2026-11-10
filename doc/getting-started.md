@@ -34,7 +34,7 @@ npm install
 Jika PowerShell Windows memblokir skrip `npm.ps1`, jalankan shim Windows:
 
 ```powershell
-npm.cmd install
+npm install
 ```
 
 ## Jalankan aplikasi
@@ -43,13 +43,13 @@ Skrip berikut membangun TypeScript, mengonfigurasi CMake, membangun aplikasi
 native, lalu menjalankannya:
 
 ```powershell
-npm.cmd run app
+npm run app
 ```
 
 Untuk menjalankan mode development dengan hot reload:
 
 ```powershell
-npm.cmd run dev
+npm run dev
 ```
 
 Hot reload memperbarui UI ketika file TypeScript pada `src` atau `app/core`
@@ -58,8 +58,8 @@ berubah. Perubahan C++ memerlukan build ulang dan restart aplikasi.
 ## Periksa TypeScript dan tes
 
 ```powershell
-npm.cmd run check:ts
-npm.cmd test
+npm run check:ts
+npm test
 ```
 
 `check:ts` menjalankan pemeriksaan tipe tanpa menghasilkan output. `test`
@@ -80,10 +80,7 @@ function Main() {
     body: [
       View({
         style: { padding: 16, gap: 12 },
-        children: [
-          Text("Halo dari JuliaNative"),
-          Button({ text: "Tombol" }),
-        ],
+        children: [Text("Halo dari JuliaNative"), Button({ text: "Tombol" })],
       }),
     ],
   });
