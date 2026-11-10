@@ -29,6 +29,7 @@ set(APP_SOURCES
     app/Style.cpp
     app/Media.cpp
     app/UiRenderer.cpp
+    app/JuliaSwitch.h
 )
 
 # ---- release remove comments ----

@@ -12,6 +12,7 @@ import { handleStorageResponse } from "./localStorage";
 import { Application } from "./Application";
 import { handleNativeResponse } from "./NativeBridge";
 import { checkboxDispatchChange } from "./components";
+import { switchDispatchChange } from "./components/Switch";
 
 type ListViewport = { offset: number; viewportSize: number };
 type VirtualListConfig = {
@@ -547,6 +548,7 @@ export function listenNativeEvents(): void {
         } else if (message.type === "change") {
           inputDispatchChange(message.id, message.value);
           checkboxDispatchChange(message.id, message.value);
+          switchDispatchChange(message.id, message.value);
         } else if (message.type === "modalClose") {
           dispatchModalClose(message.id);
         } else if (message.type === "tableSort") {

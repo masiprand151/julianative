@@ -134,6 +134,10 @@ import {
   clearCheckboxCallbacks,
   resetCheckboxEventCounter,
 } from "./components";
+import {
+  clearSwitchCallbacks,
+  resetSwitchEventCounter,
+} from "./components/Switch";
 
 export interface Screen {
   id: number;
@@ -234,6 +238,7 @@ export class Application {
       clearCheckboxCallbacks();
       clearTextInputCallbacks();
       clearWidgetCallbacks();
+      clearSwitchCallbacks();
 
       resetButtonEventCounter();
       resetFloatingActionButtonEventCounter();
@@ -243,6 +248,7 @@ export class Application {
       resetTextInputEventCounter();
       resetTableEventCounter();
       resetWidgetEventCounter();
+      resetSwitchEventCounter();
 
       try {
         render(main());

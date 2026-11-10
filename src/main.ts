@@ -1,12 +1,5 @@
 import { Application, useState } from "@julia/core";
-import {
-  Button,
-  Builder,
-  Card,
-  Column,
-  Text,
-  Checkbox,
-} from "@julia/core/components";
+import { Button, Builder, Card, Column, Text } from "@julia/core/components";
 import { styles } from "./styles";
 
 function Main() {
