@@ -15,7 +15,8 @@ export type ComponentType =
   | "Modal"
   | "Table"
   | "Checkbox"
-  | "Switch";
+  | "Switch"
+  | "RadioButton";
 
 export type EventHandler = (...args: any[]) => void;
 export type EventMap = Record<string, string>;
@@ -54,6 +55,14 @@ export interface WidgetProps {
 }
 
 export interface CheckboxProps {
+  label?: string;
+  checked?: boolean;
+  disabled?: boolean;
+  onChange?: (checked: boolean) => void;
+  style?: StyleProps;
+}
+
+export interface RadioButtonProps {
   label?: string;
   checked?: boolean;
   disabled?: boolean;

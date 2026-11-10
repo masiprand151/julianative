@@ -2,6 +2,7 @@
 #include "JuliaSwitch.h"
 #include <QScreen>
 #include <QCheckBox>
+#include <QRadioButton>
 
 
 QWidget *JuliaRuntime::createNode(const QJsonObject &data)
@@ -219,6 +220,53 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
         );
 
         return input;
+    }
+
+
+    if (type == "RadioButton") {
+        auto *widget = new QRadioButton(
+            props["label"].toString()
+        );
+
+        widget->setChecked(
+            props["checked"].toBool(false)
+        );
+
+        widget->setEnabled(
+            !props["disabled"].toBool(false)
+        );
+
+        applyStyle(
+            widget,
+            props["style"].toObject(),
+            {},
+            true
+        );
+
+        const QString eventId = events["change"].toString();
+
+        connect(
+            widget,
+            &QRadioButton::toggled,
+            this,
+            [this, eventId](bool checked) {
+                if (eventId.isEmpty()) return;
+
+                QJsonObject message;
+                message["type"] = "change";
+                message["id"] = eventId;
+                message["value"] = checked;
+
+                const QByteArray data =
+                    QJsonDocument(message).toJson(
+                        QJsonDocument::Compact
+                    );
+
+                node->write(data + "\n");
+            }
+        );
+
+        return widget;
     }
 
     if (type == "Button" || type == "FloatingActionButton") {

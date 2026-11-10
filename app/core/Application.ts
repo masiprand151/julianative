@@ -138,6 +138,10 @@ import {
   clearSwitchCallbacks,
   resetSwitchEventCounter,
 } from "./components/Switch";
+import {
+  clearRadioCallbacks,
+  resetRadioEventCounter,
+} from "./components/RadioButton";
 
 export interface Screen {
   id: number;
@@ -239,10 +243,12 @@ export class Application {
       clearTextInputCallbacks();
       clearWidgetCallbacks();
       clearSwitchCallbacks();
+      clearRadioCallbacks();
 
       resetButtonEventCounter();
       resetFloatingActionButtonEventCounter();
       resetCheckboxEventCounter();
+      resetRadioEventCounter();
 
       resetModalEventCounter();
       resetTextInputEventCounter();

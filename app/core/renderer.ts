@@ -13,6 +13,7 @@ import { Application } from "./Application";
 import { handleNativeResponse } from "./NativeBridge";
 import { checkboxDispatchChange } from "./components";
 import { switchDispatchChange } from "./components/Switch";
+import { radioButtonDispatchChange } from "./components/RadioButton";
 
 type ListViewport = { offset: number; viewportSize: number };
 type VirtualListConfig = {
@@ -532,8 +533,12 @@ const normalizeEvnetChange = (id: string, value: any): void => {
     inputDispatchChange(id, value);
   }
 
-  if (String(id).startsWith("checkbox")) {
+  if (String(id).startsWith("checkbox_")) {
     checkboxDispatchChange(id, value);
+  }
+
+  if (String(id).startsWith("radio_")) {
+    radioButtonDispatchChange(id, value);
   }
 };
 

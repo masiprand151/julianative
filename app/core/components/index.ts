@@ -14,3 +14,5 @@ export * from "./Video";
 export * from "./Widget";
 export * from "./View";
 export * from "./Checkbox";
+export * from "./RadioButton";
+export * from "./Switch";
