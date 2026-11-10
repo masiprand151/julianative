@@ -13,6 +13,7 @@ import { Application } from "./Application";
 import { handleNativeResponse } from "./NativeBridge";
 import {
   checkboxDispatchChange,
+  DatePickerDispatchChange,
   ProgressBarDispatchChange,
 } from "./components";
 import { switchDispatchChange } from "./components/Switch";
@@ -546,6 +547,10 @@ const normalizeEvnetChange = (id: string, value: any): void => {
 
   if (String(id).startsWith("progress_")) {
     ProgressBarDispatchChange(id, value);
+  }
+
+  if (String(id).startsWith("date_")) {
+    DatePickerDispatchChange(id, value);
   }
 };
 

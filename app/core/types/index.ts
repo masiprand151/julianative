@@ -17,7 +17,8 @@ export type ComponentType =
   | "Checkbox"
   | "Switch"
   | "RadioButton"
-  | "ProgressBar";
+  | "ProgressBar"
+  | "DatePicker";
 
 export type EventHandler = (...args: any[]) => void;
 export type EventMap = Record<string, string>;
@@ -63,6 +64,16 @@ export interface ProgressBarProps {
   seekable?: boolean;
   disabled?: boolean;
   onChange?: (value: number) => void;
+  style?: StyleProps;
+}
+
+export interface DatePickerProps {
+  value?: string;
+  minimumDate?: string;
+  maximumDate?: string;
+  format?: string;
+  disabled?: boolean;
+  onChange?: (date: string) => void;
   style?: StyleProps;
 }
 

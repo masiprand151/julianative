@@ -5,6 +5,8 @@
 #include <QRadioButton>
 #include <QProgressBar>
 #include <QSlider>
+#include <QDateEdit>
+#include <QDate>
 
 
 QWidget *JuliaRuntime::createNode(const QJsonObject &data)
@@ -345,6 +347,83 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
                 props["style"].toObject(),
                 {},
                 true
+            );
+
+            return widget;
+        }
+
+
+        if (type == "DatePicker") {
+
+            auto *widget = new QDateEdit();
+
+            widget->setCalendarPopup(true);
+
+            widget->setDisplayFormat(
+                props["format"].toString("yyyy-MM-dd")
+            );
+
+            QDate date = QDate::fromString(
+                props["value"].toString(),
+                "yyyy-MM-dd"
+            );
+
+            if (date.isValid()) {
+                widget->setDate(date);
+            } else {
+                widget->setDate(QDate::currentDate());
+            }
+
+            QDate minimumDate = QDate::fromString(
+                props["minimumDate"].toString(),
+                "yyyy-MM-dd"
+            );
+
+            QDate maximumDate = QDate::fromString(
+                props["maximumDate"].toString(),
+                "yyyy-MM-dd"
+            );
+
+            if (minimumDate.isValid()) {
+                widget->setMinimumDate(minimumDate);
+            }
+
+            if (maximumDate.isValid()) {
+                widget->setMaximumDate(maximumDate);
+            }
+
+            widget->setEnabled(
+                !props["disabled"].toBool(false)
+            );
+
+            applyStyle(
+                widget,
+                props["style"].toObject(),
+                {},
+                true
+            );
+
+            const QString eventId = events["change"].toString();
+
+            connect(
+                widget,
+                &QDateEdit::dateChanged,
+                this,
+                [this, eventId](const QDate &date) {
+
+                    if (eventId.isEmpty()) return;
+
+                    QJsonObject message;
+                    message["type"] = "change";
+                    message["id"] = eventId;
+                    message["value"] = date.toString("yyyy-MM-dd");
+
+                    node->write(
+                        QJsonDocument(message).toJson(
+                            QJsonDocument::Compact
+                        ) + "\n"
+                    );
+                }
             );
 
             return widget;
