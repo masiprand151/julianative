@@ -1,22 +1,17 @@
 import { Application, useState } from "@julia/core";
-import { Button, Builder, Card, Column, Text } from "@julia/core/components";
+import {
+  Button,
+  Builder,
+  Card,
+  Column,
+  Text,
+  Checkbox,
+} from "@julia/core/components";
 import { styles } from "./styles";
 
 function Main() {
   const [count, setCount] = useState(0);
-  async function test() {
-    const platform = await Application.system.getPlatform();
-    const os = await Application.system.getOSVersion();
-    const cpu = await Application.system.getCPUInfo();
-    const memory = await Application.system.getMemoryInfo();
 
-    console.log(platform);
-    console.log(os);
-    console.log(cpu);
-    console.log(memory);
-  }
-
-  test();
   return Builder({
     title: "JuliaNative",
     width: 520,
@@ -34,12 +29,13 @@ function Main() {
             style: {
               fontSize: 24,
               fontWeight: "bold",
-              color: "#193b35",
+              color: "#dde7e5",
             },
           }),
           Text("Make a native app for everyone with JuliaNative", {
-            style: { color: "#45635c" },
+            style: { color: "#dde2e1" },
           }),
+
           Card({
             title: "Counter",
             style: {

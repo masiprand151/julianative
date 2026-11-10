@@ -13,7 +13,8 @@ export type ComponentType =
   | "FlatList"
   | "FloatingActionButton"
   | "Modal"
-  | "Table";
+  | "Table"
+  | "Checkbox";
 
 export type EventHandler = (...args: any[]) => void;
 export type EventMap = Record<string, string>;
@@ -49,6 +50,14 @@ export interface WidgetProps {
   onMinimize?: () => void;
   style?: StyleProps;
   body: VNode[];
+}
+
+export interface CheckboxProps {
+  label?: string;
+  checked?: boolean;
+  disabled?: boolean;
+  onChange?: (checked: boolean) => void;
+  style?: StyleProps;
 }
 
 export interface StyleProps {

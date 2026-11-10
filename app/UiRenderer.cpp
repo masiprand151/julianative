@@ -1,5 +1,6 @@
 #include "JuliaRuntime.h"
 #include <QScreen>
+#include <QCheckBox>
 
 QWidget *JuliaRuntime::createNode(const QJsonObject &data)
 {
@@ -65,6 +66,57 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
 
         return label;
     }
+
+
+    if (type == "Checkbox") {
+        auto *checkbox = new QCheckBox(
+            props["label"].toString()
+        );
+
+        checkbox->setChecked(
+            props["checked"].toBool(false)
+        );
+
+        checkbox->setEnabled(
+            !props["disabled"].toBool(false)
+        );
+
+        applyStyle(
+            checkbox,
+            props["style"].toObject(),
+            {},
+            true
+        );
+
+        const QString eventId = events["change"].toString();
+
+        connect(
+            checkbox,
+            &QCheckBox::toggled,
+            this,
+            [this, eventId](bool checked) {
+
+                if (eventId.isEmpty()) return;
+
+                QJsonObject message;
+
+                message["type"] = "change";
+                message["id"] = eventId;
+                message["value"] = checked;
+
+                const QByteArray data =
+                    QJsonDocument(message)
+                        .toJson(QJsonDocument::Compact);
+
+                node->write(data + "\n");
+            }
+
+            
+        );
+
+        return checkbox;
+    }
+
 
     if (type == "Image") {
         return createImage(props);

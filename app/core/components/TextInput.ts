@@ -31,7 +31,7 @@ export function TextInput(props: TextInputProps = {}): VNode {
   };
 }
 
-export function dispatchChange(id: string, value: string): void {
+export function inputDispatchChange(id: string, value: string): void {
   const callback = changeCallbacks.get(id);
 
   if (callback) {

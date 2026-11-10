@@ -1,4 +1,4 @@
-import { StyleSheet } from "@julia/core/components";
+import { StyleSheet } from "@julia/core";
 
 export const styles = StyleSheet.create({
   primaryButton: {

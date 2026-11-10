@@ -130,6 +130,10 @@ import {
   resetWidgetEventCounter,
 } from "./components/Widget";
 import { System } from "./system";
+import {
+  clearCheckboxCallbacks,
+  resetCheckboxEventCounter,
+} from "./components";
 
 export interface Screen {
   id: number;
@@ -227,11 +231,14 @@ export class Application {
       clearFloatingActionButtonCallbacks();
       clearModalCallbacks();
       clearTableCallbacks();
+      clearCheckboxCallbacks();
       clearTextInputCallbacks();
       clearWidgetCallbacks();
 
       resetButtonEventCounter();
       resetFloatingActionButtonEventCounter();
+      resetCheckboxEventCounter();
+
       resetModalEventCounter();
       resetTextInputEventCounter();
       resetTableEventCounter();
