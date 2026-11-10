@@ -11,7 +11,10 @@ import { requestRender, withStateScope } from "./state";
 import { handleStorageResponse } from "./localStorage";
 import { Application } from "./Application";
 import { handleNativeResponse } from "./NativeBridge";
-import { checkboxDispatchChange } from "./components";
+import {
+  checkboxDispatchChange,
+  ProgressBarDispatchChange,
+} from "./components";
 import { switchDispatchChange } from "./components/Switch";
 import { radioButtonDispatchChange } from "./components/RadioButton";
 
@@ -539,6 +542,10 @@ const normalizeEvnetChange = (id: string, value: any): void => {
 
   if (String(id).startsWith("radio_")) {
     radioButtonDispatchChange(id, value);
+  }
+
+  if (String(id).startsWith("progress_")) {
+    ProgressBarDispatchChange(id, value);
   }
 };
 

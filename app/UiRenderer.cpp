@@ -3,6 +3,8 @@
 #include <QScreen>
 #include <QCheckBox>
 #include <QRadioButton>
+#include <QProgressBar>
+#include <QSlider>
 
 
 QWidget *JuliaRuntime::createNode(const QJsonObject &data)
@@ -269,6 +271,84 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
         return widget;
     }
 
+        if (type == "ProgressBar") {
+
+            const int minimum = props["minimum"].toInt(0);
+            const int maximum = props["maximum"].toInt(100);
+            const int value = props["value"].toInt(0);
+
+            const bool seekable =
+                props["seekable"].toBool(false);
+
+            const QString eventId =
+                events["change"].toString();
+
+            if (seekable) {
+
+                auto *widget = new QSlider(Qt::Horizontal);
+
+                widget->setMinimum(minimum);
+                widget->setMaximum(maximum);
+                widget->setValue(value);
+
+                widget->setEnabled(
+                    !props["disabled"].toBool(false)
+                );
+
+                applyStyle(
+                    widget,
+                    props["style"].toObject(),
+                    {},
+                    true
+                );
+
+                connect(
+                    widget,
+                    &QSlider::valueChanged,
+                    this,
+                    [this, eventId](int newValue) {
+
+                        if (eventId.isEmpty()) return;
+
+                        QJsonObject message;
+                        message["type"] = "change";
+                        message["id"] = eventId;
+                        message["value"] = newValue;
+
+                        node->write(
+                            QJsonDocument(message).toJson(
+                                QJsonDocument::Compact
+                            ) + "\n"
+                        );
+                    }
+                );
+
+                return widget;
+            }
+
+            auto *widget = new QProgressBar();
+
+            widget->setMinimum(minimum);
+            widget->setMaximum(maximum);
+            widget->setValue(value);
+
+            widget->setTextVisible(
+                props["textVisible"].toBool(false)
+            );
+
+            widget->setEnabled(
+                !props["disabled"].toBool(false)
+            );
+
+            applyStyle(
+                widget,
+                props["style"].toObject(),
+                {},
+                true
+            );
+
+            return widget;
+        }
     if (type == "Button" || type == "FloatingActionButton") {
         const bool isFloatingActionButton =
             type == "FloatingActionButton";

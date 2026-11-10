@@ -16,7 +16,8 @@ export type ComponentType =
   | "Table"
   | "Checkbox"
   | "Switch"
-  | "RadioButton";
+  | "RadioButton"
+  | "ProgressBar";
 
 export type EventHandler = (...args: any[]) => void;
 export type EventMap = Record<string, string>;
@@ -52,6 +53,17 @@ export interface WidgetProps {
   onMinimize?: () => void;
   style?: StyleProps;
   body: VNode[];
+}
+
+export interface ProgressBarProps {
+  value?: number;
+  minimum?: number;
+  maximum?: number;
+  textVisible?: boolean;
+  seekable?: boolean;
+  disabled?: boolean;
+  onChange?: (value: number) => void;
+  style?: StyleProps;
 }
 
 export interface CheckboxProps {
