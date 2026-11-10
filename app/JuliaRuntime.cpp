@@ -1,4 +1,6 @@
 #include "JuliaRuntime.h"
+#include <QGuiApplication>
+#include <QScreen>
 
 // Constructor: menyiapkan window dan koneksi komunikasi Node.js.
 JuliaRuntime::JuliaRuntime()
@@ -56,6 +58,62 @@ JuliaRuntime::JuliaRuntime()
                             closeAuthorized = true;
                             window->close();
                         }
+                        else if (command == "screens") {
+
+                            QJsonArray screensArray;
+
+                            const auto screens = QGuiApplication::screens();
+
+                            QScreen *primaryScreen =
+                                QGuiApplication::primaryScreen();
+
+                            for (int i = 0; i < screens.size(); i++) {
+
+                                QScreen *screen = screens[i];
+
+                                QRect geometry = screen->geometry();
+                                QRect available = screen->availableGeometry();
+
+                                QJsonObject screenObj;
+
+                                screenObj["id"] = i;
+                                screenObj["name"] = screen->name();
+
+                                screenObj["width"] = geometry.width();
+                                screenObj["height"] = geometry.height();
+
+                                screenObj["x"] = geometry.x();
+                                screenObj["y"] = geometry.y();
+
+                                screenObj["availableWidth"] = available.width();
+                                screenObj["availableHeight"] = available.height();
+
+                                screenObj["primary"] =
+                                    (screen == primaryScreen);
+
+                                screenObj["scaleFactor"] =
+                                    screen->devicePixelRatio();
+
+                                screensArray.append(screenObj);
+                            }
+
+                            QJsonObject response;
+
+                            response["type"] = "screensResponse";
+
+                            response["requestId"] =
+                                message["requestId"];
+
+                            response["success"] = true;
+
+                            response["screens"] = screensArray;
+
+                            node->write(
+                                QJsonDocument(response)
+                                    .toJson(QJsonDocument::Compact) + "\n"
+                            );
+                        }
+
                     } else if (type == "patch") {
                         applyLeafPatches(message);
                     } else if (type == "listPatch") {
@@ -79,6 +137,8 @@ JuliaRuntime::JuliaRuntime()
         }
     );
 }
+
+
 
 // Menjalankan Node.js dan menentukan lokasi file JavaScript.
 void JuliaRuntime::handleStorageRequest(const QJsonObject &message)

@@ -9,6 +9,7 @@ import { dispatchTableResize, dispatchTableSort } from "./components/Table";
 import { dispatchWidgetEvent } from "./components/Widget";
 import { requestRender, withStateScope } from "./state";
 import { handleStorageResponse } from "./localStorage";
+import { Application } from "./Application";
 
 type ListViewport = { offset: number; viewportSize: number };
 type VirtualListConfig = {
@@ -27,10 +28,7 @@ const virtualListItemSizes = new Map<string, Map<string, number>>();
 let activeVirtualListIds = new Set<string>();
 
 function nodeIdForKey(parentId: string, key: string | number): string {
-  const encoded = encodeURIComponent(JSON.stringify(key)).replace(
-    /\./g,
-    "%2E",
-  );
+  const encoded = encodeURIComponent(JSON.stringify(key)).replace(/\./g, "%2E");
   return `${parentId}.key.${encoded}`;
 }
 
@@ -89,7 +87,8 @@ function listWindow(
       start: 0,
       end,
       leadingExtent: 0,
-      trailingExtent: sizes.slice(end).reduce((sum, size) => sum + size, 0) +
+      trailingExtent:
+        sizes.slice(end).reduce((sum, size) => sum + size, 0) +
         config.gap * Math.max(0, trailingItemCount - (end > 0 ? 1 : 0)),
     };
   }
@@ -107,19 +106,13 @@ function listWindow(
   }
   const viewportEnd = offset + Math.max(1, viewport.viewportSize);
   let visibleEnd = firstVisible + 1;
-  while (
-    visibleEnd < config.totalCount &&
-    starts[visibleEnd] < viewportEnd
-  ) {
+  while (visibleEnd < config.totalCount && starts[visibleEnd] < viewportEnd) {
     visibleEnd++;
   }
   const start = Math.max(0, firstVisible - config.overscan);
   const end = Math.min(
     config.totalCount,
-    Math.max(
-      start + config.initialNumToRender,
-      visibleEnd + config.overscan,
-    ),
+    Math.max(start + config.initialNumToRender, visibleEnd + config.overscan),
   );
   const leadingExtent = sizes
     .slice(0, start)
@@ -163,11 +156,7 @@ function updateListViewport(
     offset: Math.max(0, offset),
     viewportSize: Math.max(0, viewportSize),
   };
-  const previousWindow = listWindow(
-    config,
-    previousViewport,
-    measuredSizes,
-  );
+  const previousWindow = listWindow(config, previousViewport, measuredSizes);
   let measurementsChanged = false;
   for (const item of items) {
     if (
@@ -189,9 +178,11 @@ function updateListViewport(
   if (measurementsChanged) virtualListItemSizes.set(nodeId, measuredSizes);
   const nextWindow = listWindow(config, nextViewport, measuredSizes);
   virtualListViewports.set(nodeId, nextViewport);
-  if (measurementsChanged ||
-      previousWindow.start !== nextWindow.start ||
-      previousWindow.end !== nextWindow.end) {
+  if (
+    measurementsChanged ||
+    previousWindow.start !== nextWindow.start ||
+    previousWindow.end !== nextWindow.end
+  ) {
     requestRender();
   }
 }
@@ -205,10 +196,14 @@ function serializeFlatList(node: VNode, nodeId: string): any {
   const initialNumToRender = props.initialNumToRender ?? 12;
   const overscan = props.overscan ?? 3;
   if (!Number.isFinite(itemSize) || itemSize <= 0) {
-    throw new RangeError("FlatList estimatedItemSize must be a positive number.");
+    throw new RangeError(
+      "FlatList estimatedItemSize must be a positive number.",
+    );
   }
   if (!Number.isInteger(initialNumToRender) || initialNumToRender < 1) {
-    throw new RangeError("FlatList initialNumToRender must be a positive integer.");
+    throw new RangeError(
+      "FlatList initialNumToRender must be a positive integer.",
+    );
   }
   if (!Number.isInteger(overscan) || overscan < 0) {
     throw new RangeError("FlatList overscan must be a non-negative integer.");
@@ -308,10 +303,7 @@ function serializeFlatList(node: VNode, nodeId: string): any {
     props: {},
     children,
   };
-  const serializedChildren = serializeChildren(
-    listNode.children ?? [],
-    nodeId,
-  );
+  const serializedChildren = serializeChildren(listNode.children ?? [], nodeId);
 
   return {
     type: "FlatList",
@@ -555,17 +547,9 @@ export function listenNativeEvents(): void {
         } else if (message.type === "modalClose") {
           dispatchModalClose(message.id);
         } else if (message.type === "tableSort") {
-          dispatchTableSort(
-            message.id,
-            message.columnIndex,
-            message.ascending,
-          );
+          dispatchTableSort(message.id, message.columnIndex, message.ascending);
         } else if (message.type === "tableResize") {
-          dispatchTableResize(
-            message.id,
-            message.columnIndex,
-            message.width,
-          );
+          dispatchTableResize(message.id, message.columnIndex, message.width);
         } else if (message.type === "windowEvent") {
           try {
             if (message.event === "resize") {
@@ -589,6 +573,9 @@ export function listenNativeEvents(): void {
           );
         } else if (message.type === "storageResponse") {
           handleStorageResponse(message);
+        }
+        if (message.type === "screensResponse") {
+          Application.handleNativeResponse(message);
         }
       } catch (error) {
         console.error("Native event error:", error);
