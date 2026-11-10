@@ -522,6 +522,21 @@ export function render(root: VNode): void {
   process.stdout.write("__JULIA_UI__" + JSON.stringify(message) + "\n");
 }
 
+// helper pasing change
+const normalizeEvnetChange = (id: string, value: any): void => {
+  if (String(id).startsWith("switch_")) {
+    switchDispatchChange(id, value);
+  }
+
+  if (String(id).startsWith("input_")) {
+    inputDispatchChange(id, value);
+  }
+
+  if (String(id).startsWith("checkbox")) {
+    checkboxDispatchChange(id, value);
+  }
+};
+
 // Menerima event dari native C++.
 export function listenNativeEvents(): void {
   let buffer = "";
@@ -546,9 +561,7 @@ export function listenNativeEvents(): void {
           dispatchEvent(message.id);
           dispatchFloatingActionButtonPress(message.id);
         } else if (message.type === "change") {
-          inputDispatchChange(message.id, message.value);
-          checkboxDispatchChange(message.id, message.value);
-          switchDispatchChange(message.id, message.value);
+          normalizeEvnetChange(message.id, message.value);
         } else if (message.type === "modalClose") {
           dispatchModalClose(message.id);
         } else if (message.type === "tableSort") {
