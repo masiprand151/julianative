@@ -470,8 +470,8 @@ void JuliaRuntime::start(bool developmentMode)
 
     // Lokasi file utama JavaScript untuk versi portable.
     mainFile =
-        QDir(appDir).filePath("runtime/packages/src/main.js");
-
+        QDir(appDir).filePath("runtime/packages/js/julia.cjs");
+  
     // Folder kerja Node.js untuk versi portable.
     workingDir =
         QDir(appDir).filePath("runtime/packages");
@@ -499,7 +499,7 @@ void JuliaRuntime::start(bool developmentMode)
 
         // Lokasi hasil compile TypeScript.
         mainFile =
-            QDir(projectDir).filePath("packages/build/src/main.js");
+            QDir(projectDir).filePath("packages/build/js/julia.cjs");
 
         // Folder kerja Node.js.
         workingDir = projectDir;

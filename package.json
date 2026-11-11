@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "TypeScript to native C++ desktop compiler",
   "private": true,
+  "bin": {
+    "julia": "scripts/cli.js"
+  },
   "scripts": {
     "build:ts": "tsc && tsc-alias -p tsconfig.json",
     "check:ts": "tsc --noEmit",
@@ -32,6 +35,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
     "nodemon": "^3.1.14",
     "tsc-alias": "^1.9.10"
   }
