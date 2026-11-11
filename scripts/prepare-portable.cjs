@@ -4,6 +4,9 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 
+/**
+ * app name sama dengan package.json name
+ */
 const packageJson = JSON.parse(
   fs.readFileSync(path.join(root, "package.json"), "utf8"),
 );
@@ -133,6 +136,7 @@ execFileSync(
   qtDeployTool,
   [
     deployMode,
+    "--release",
     "--compiler-runtime",
     "--no-translations",
     "--no-quick-import",

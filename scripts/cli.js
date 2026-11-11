@@ -100,7 +100,7 @@ function checkTS() {
 }
 
 // Configure CMake.
-function configureApp() {
+function configureApp(buildType = "Debug") {
   run("cmake", [
     "-S",
     ".",
@@ -108,7 +108,7 @@ function configureApp() {
     "packages/build",
     "-G",
     "Ninja",
-    "-DCMAKE_BUILD_TYPE=Debug",
+    `-DCMAKE_BUILD_TYPE=${buildType}`,
     `-DCMAKE_C_COMPILER=${CONFIG.gcc}`,
     `-DCMAKE_CXX_COMPILER=${CONFIG.gpp}`,
   ]);
