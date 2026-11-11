@@ -470,11 +470,11 @@ void JuliaRuntime::start(bool developmentMode)
 
     // Lokasi file utama JavaScript untuk versi portable.
     mainFile =
-        QDir(appDir).filePath("runtime/app/src/main.js");
+        QDir(appDir).filePath("runtime/packages/src/main.js");
 
     // Folder kerja Node.js untuk versi portable.
     workingDir =
-        QDir(appDir).filePath("runtime/app");
+        QDir(appDir).filePath("runtime/packages");
 
     QString projectDir;
     if (developmentMode) {
@@ -495,11 +495,11 @@ void JuliaRuntime::start(bool developmentMode)
 
         // Lokasi Node.js pada project development.
         nodePath =
-            QDir(projectDir).filePath("app/node/node.exe");
+            QDir(projectDir).filePath("packages/node/node.exe");
 
         // Lokasi hasil compile TypeScript.
         mainFile =
-            QDir(projectDir).filePath("app/build/src/main.js");
+            QDir(projectDir).filePath("packages/build/src/main.js");
 
         // Folder kerja Node.js.
         workingDir = projectDir;
@@ -524,7 +524,7 @@ void JuliaRuntime::start(bool developmentMode)
 
     if (developmentMode) {
         const QString reloadSignalPath =
-            QDir(projectDir).filePath("app/build/.dev-reload");
+            QDir(projectDir).filePath("packages/build/.dev-reload");
         QFile reloadSignal(reloadSignalPath);
         if (!reloadSignal.open(QIODevice::WriteOnly)) {
             qWarning() << "Could not create development reload signal:"

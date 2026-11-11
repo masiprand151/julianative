@@ -3,7 +3,7 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const nativeApp = spawn(
-  path.join(root, "app", "build", "JuliaNative.exe"),
+  path.join(root, "packages", "build", "JuliaNative.exe"),
   ["--dev"],
   { cwd: root, stdio: "inherit" },
 );

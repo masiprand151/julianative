@@ -24,12 +24,12 @@ find_package(Qt6 REQUIRED COMPONENTS
 )
 
 set(APP_SOURCES
-    app/main.cpp
-    app/JuliaRuntime.cpp
-    app/Style.cpp
-    app/Media.cpp
-    app/UiRenderer.cpp
-    app/JuliaSwitch.h
+    packages/main.cpp
+    packages/JuliaRuntime.cpp
+    packages/Style.cpp
+    packages/Media.cpp
+    packages/UiRenderer.cpp
+    packages/JuliaSwitch.h
 )
 
 # ---- release remove comments ----

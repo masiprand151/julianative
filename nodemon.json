@@ -1,7 +1,7 @@
 {
-  "watch": ["src", "app/core"],
+  "watch": ["src", "packages/core"],
   "ext": "ts",
-  "ignore": ["app/build/**", "app/build", "node_modules/**"],
+  "ignore": ["packages/build/**", "packages/build", "node_modules/**"],
   "exec": "npm run dev:reload",
   "delay": "500",
   "runOnChangeOnly": true

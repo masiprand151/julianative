@@ -17,12 +17,12 @@ const portableExecutableName = `${appName}.exe`;
 const portable = path.join(root, "portable");
 const runtime = path.join(portable, "runtime");
 
-const nodeSource = path.join(root, "app", "node", "node.exe");
-const buildDir = path.join(root, "app", "build");
+const nodeSource = path.join(root, "packages", "node", "node.exe");
+const buildDir = path.join(root, "packages", "build");
 const executable = path.join(buildDir, "JuliaNative.exe");
 const cmakeCachePath = path.join(buildDir, "CMakeCache.txt");
 
-const sourceApp = path.join(buildDir, "app");
+const sourceApp = path.join(buildDir, "packages");
 const sourceSrc = path.join(buildDir, "src");
 const sourceAssets = path.join(root, "assets");
 
@@ -54,12 +54,14 @@ requirePath(sourceSrc);
 const cmakeCache = fs.readFileSync(cmakeCachePath, "utf8");
 const qtDirMatch = cmakeCache.match(/^Qt6_DIR:[^=]*=(.+)$/m);
 if (!qtDirMatch) {
-  throw new Error("Qt6_DIR was not found in app/build/CMakeCache.txt.");
+  throw new Error("Qt6_DIR was not found in packages/build/CMakeCache.txt.");
 }
 
 const buildTypeMatch = cmakeCache.match(/^CMAKE_BUILD_TYPE:[^=]*=(.+)$/m);
 if (!buildTypeMatch) {
-  throw new Error("CMAKE_BUILD_TYPE was not found in app/build/CMakeCache.txt.");
+  throw new Error(
+    "CMAKE_BUILD_TYPE was not found in packages/build/CMakeCache.txt.",
+  );
 }
 
 const qtRoot = path.resolve(qtDirMatch[1].trim(), "..", "..", "..");
@@ -75,7 +77,7 @@ fs.mkdirSync(path.join(runtime, "node"), {
   recursive: true,
 });
 
-fs.mkdirSync(path.join(runtime, "app"), {
+fs.mkdirSync(path.join(runtime, "packages"), {
   recursive: true,
 });
 
@@ -86,7 +88,9 @@ fs.copyFileSync(executable, portableExecutable);
 execFileSync(
   qtDeployTool,
   [
-    buildTypeMatch[1].trim().toLowerCase() === "debug" ? "--debug" : "--release",
+    buildTypeMatch[1].trim().toLowerCase() === "debug"
+      ? "--debug"
+      : "--release",
     "--compiler-runtime",
     "--no-translations",
     "--no-quick-import",
@@ -116,10 +120,7 @@ const dependencySearchPath = [
   path.join(msysRoot, "usr", "bin"),
   process.env.PATH ?? "",
 ].join(path.delimiter);
-const packagedBinaries = [
-  portableExecutable,
-  ...findDllFiles(portable),
-];
+const packagedBinaries = [portableExecutable, ...findDllFiles(portable)];
 const runtimeDependencies = new Map();
 
 for (const binary of packagedBinaries) {
@@ -129,7 +130,9 @@ for (const binary of packagedBinaries) {
   });
   for (const line of output.split(/\r?\n/)) {
     if (/=>\s+not found/i.test(line)) {
-      throw new Error(`Unresolved runtime dependency for ${binary}: ${line.trim()}`);
+      throw new Error(
+        `Unresolved runtime dependency for ${binary}: ${line.trim()}`,
+      );
     }
 
     const dependency = line.match(/=>\s+([^\s(]+)\s+\(/)?.[1];
@@ -149,18 +152,24 @@ for (const [destination, source] of runtimeDependencies) {
   fs.copyFileSync(source, destination);
 }
 
-console.log(`Copied ${runtimeDependencies.size} MSYS2 runtime DLL dependencies.`);
+console.log(
+  `Copied ${runtimeDependencies.size} MSYS2 runtime DLL dependencies.`,
+);
 
 // Salin Node.js portable.
 fs.copyFileSync(nodeSource, path.join(runtime, "node", "node.exe"));
 
 // Salin hasil kompilasi TypeScript.
-fs.cpSync(sourceSrc, path.join(runtime, "app", "src"), { recursive: true });
+fs.cpSync(sourceSrc, path.join(runtime, "packages", "src"), {
+  recursive: true,
+});
 
-fs.cpSync(sourceApp, path.join(runtime, "app", "app"), { recursive: true });
+fs.cpSync(sourceApp, path.join(runtime, "packages", "packages"), {
+  recursive: true,
+});
 
 if (fs.existsSync(sourceAssets) && fs.statSync(sourceAssets).isDirectory()) {
-  fs.cpSync(sourceAssets, path.join(runtime, "app", "assets"), {
+  fs.cpSync(sourceAssets, path.join(runtime, "packages", "assets"), {
     recursive: true,
   });
 }

@@ -4,17 +4,16 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "rootDir": ".",
-    "outDir": "app/build",
+    "outDir": "packages/build",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "declaration": true,
     "types": ["node"],
-
     "paths": {
-      "@julia/core": ["./app/core/index.ts"],
-      "@julia/core/*": ["./app/core/*"]
+      "@julia/core": ["./packages/core/index.ts"],
+      "@julia/core/*": ["./packages/core/*"]
     }
   },
-  "include": ["src/**/*.ts", "app/core/**/*.ts"]
+  "include": ["src/**/*.ts", "packages/core/**/*.ts"]
 }
