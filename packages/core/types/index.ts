@@ -306,6 +306,13 @@ export interface ImageProps {
   style?: StyleProps;
 }
 
+export interface IconProps {
+  source: string;
+  alt?: string;
+  resizeMode?: "contain" | "cover" | "fill";
+  style?: StyleProps;
+}
+
 export interface FloatingActionButtonProps {
   icon?: string;
   imageSource?: string;

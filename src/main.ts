@@ -9,6 +9,7 @@ import {
 } from "@julia/core/components";
 
 import { styles } from "./styles";
+import { Icon } from "@julia/core/components/Icon";
 
 function Main() {
   const [count, setCount] = useState(0);
@@ -51,6 +52,7 @@ function Main() {
                   color: "#193b35",
                 },
               }),
+
               Button({
                 text: "add number",
                 onClick: () => {
