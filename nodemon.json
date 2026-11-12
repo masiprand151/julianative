@@ -1,8 +1,8 @@
 {
   "watch": ["src", "packages/core"],
   "ext": "ts",
-  "ignore": ["packages/build/**", "packages/build", "node_modules/**"],
-  "exec": "npm run dev:reload",
-  "delay": "500",
+  "ignore": ["packages/build/**", "node_modules/**"],
+  "exec": "npm run dev:reload --",
+  "delay": 500,
   "runOnChangeOnly": true
 }

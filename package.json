@@ -14,7 +14,7 @@
     "build:app": "npm run build:ts && npm run configure:app && cmake --build packages/build",
     "app": "npm run build:app && bash -lc './packages/build/JuliaNative.exe'",
     "dev": "npm run build:app && node scripts/dev.cjs",
-    "dev:reload": "npm run build:ts && node scripts/signal-reload.cjs",
+    "dev:reload": "node scripts/cli.js dev:reload",
     "prepare:portable": "node scripts/prepare-portable.cjs",
     "portable": "npm run build:app && npm run prepare:portable"
   },
