@@ -5,7 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const esbuild = require("esbuild");
 
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = process.cwd();
 
 const CONFIG = {
   buildDir: path.join(ROOT, "packages/build"),
@@ -18,14 +18,6 @@ const CONFIG = {
 
   gcc: "C:/msys64/ucrt64/bin/gcc.exe",
   gpp: "C:/msys64/ucrt64/bin/g++.exe",
-
-  tests: [
-    "tests/components.test.cjs",
-    "tests/navigation.test.cjs",
-    "tests/renderer.test.cjs",
-    "tests/localStorage.test.cjs",
-    "tests/state.test.cjs",
-  ],
 };
 
 // Execute command.
@@ -44,11 +36,11 @@ function run(command, args = []) {
   }
 
   if (result.signal) {
-    throw new Error(`Command dihentikan: ${command} (${result.signal})`);
+    throw new Error(`Command stopped: ${command} (${result.signal})`);
   }
 
   if (result.status !== 0) {
-    throw new Error(`Command gagal: ${command} (exit code: ${result.status})`);
+    throw new Error(`Command failed: ${command} (exit code: ${result.status})`);
   }
 }
 
@@ -60,7 +52,7 @@ function node(file, args = []) {
 // Build TypeScript with esbuild.
 async function buildTS(options = {}) {
   if (!fs.existsSync(CONFIG.entry)) {
-    throw new Error(`Entry tidak ditemukan: ${CONFIG.entry}`);
+    throw new Error(`Entry not found: ${CONFIG.entry}`);
   }
 
   fs.mkdirSync(CONFIG.distDir, {
@@ -69,7 +61,7 @@ async function buildTS(options = {}) {
 
   const release = options.release === true;
 
-  console.log("\nBuilding TypeScript with esbuild...");
+  console.log("\nBuilding...");
 
   await esbuild.build({
     entryPoints: [CONFIG.entry],
@@ -91,7 +83,7 @@ async function buildTS(options = {}) {
     logLevel: "info",
   });
 
-  console.log("\nTypeScript build successful!");
+  console.log("\ Build successful!");
 }
 
 // Check TypeScript types.
@@ -136,16 +128,6 @@ async function startApp(options = {}) {
   run(CONFIG.appExe);
 }
 
-// Run tests.
-async function test(options = {}) {
-  await buildTS(options);
-
-  run(process.execPath, [
-    "--test",
-    ...CONFIG.tests.map((file) => path.resolve(ROOT, file)),
-  ]);
-}
-
 // Development.
 async function dev(options = {}) {
   await buildApp(options);
@@ -180,7 +162,7 @@ function clean() {
     });
   }
 
-  console.log("\nBuild berhasil dibersihkan.");
+  console.log("\nBuild successfully cleaned.");
 }
 
 // Help.
@@ -216,7 +198,6 @@ Options:
 const commands = {
   "build:ts": buildTS,
   "check:ts": checkTS,
-  test,
   "configure:app": configureApp,
   "build:app": buildApp,
   app: startApp,

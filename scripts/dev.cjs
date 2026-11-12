@@ -1,7 +1,9 @@
 const { spawn } = require("node:child_process");
 const path = require("node:path");
 
-const root = path.resolve(__dirname, "..");
+const root = process.cwd();
+
+// const root = path.resolve(__dirname, "..");
 const nativeApp = spawn(
   path.join(root, "packages", "build", "JuliaNative.exe"),
   ["--dev"],

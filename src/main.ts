@@ -1,11 +1,6 @@
-import { Application, useState } from "../packages/core";
-import {
-  Button,
-  Builder,
-  Card,
-  Column,
-  Text,
-} from "../packages/core/components";
+import { Application, useState } from "@julia/core";
+import { Button, Builder, Card, Column, Text } from "@julia/core/components";
+
 import { styles } from "./styles";
 
 function Main() {
