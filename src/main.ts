@@ -6,8 +6,6 @@ import {
   Column,
   Text,
   Toast,
-  Divider,
-  Select,
 } from "@julia/core/components";
 
 import { styles } from "./styles";
