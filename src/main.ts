@@ -9,7 +9,6 @@ import {
 } from "@julia/core/components";
 
 import { styles } from "./styles";
-import { Icon } from "@julia/core/components/Icon";
 
 function Main() {
   const [count, setCount] = useState(0);

@@ -22,3 +22,4 @@ export * from "./Spacer";
 export * from "./Divider";
 export * from "./Select";
 export * from "./Toast";
+export * from "./Icon";
