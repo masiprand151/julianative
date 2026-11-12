@@ -72,6 +72,108 @@ JuliaRuntime::JuliaRuntime()
                             closeAuthorized = true;
                             window->close();
                         } 
+                        // toast
+                        else if (command == "toast.show") {
+
+                            const QJsonObject toastData = message;
+
+                            const QString toastMessage =
+                                toastData["message"].toString();
+
+                            const QString toastType =
+                                toastData["toastType"].toString("info");
+
+                            const QString position =
+                                toastData["position"].toString("bottom-right");
+
+
+                            const int duration = qBound(
+                                500,
+                                toastData["duration"].toInt(3000),
+                                60000
+                            );
+
+                            const int width = toastData["width"].toInt(320);
+
+
+                            if (toastMessage.isEmpty()) {
+                                return;
+                            }
+
+                            auto *toast = new QFrame(window);
+
+                            toast->setObjectName("juliaToast");
+                            toast->setWindowFlags(
+                                Qt::Tool |
+                                Qt::FramelessWindowHint |
+                                Qt::WindowStaysOnTopHint
+                            );
+                            toast->setAttribute(Qt::WA_ShowWithoutActivating);
+
+                            QString background = "#2563EB";
+
+                            if (toastType == "success") {
+                                background = "#16A34A";
+                            } else if (toastType == "error") {
+                                background = "#DC2626";
+                            } else if (toastType == "warning") {
+                                background = "#D97706";
+                            }
+
+                            auto *layout = new QHBoxLayout(toast);
+                            layout->setContentsMargins(18, 13, 18, 13);
+
+                            auto *label = new QLabel(toastMessage, toast);
+                            label->setWordWrap(true);
+                            if (width >= 320)
+                            {
+                                label->setFixedWidth(width);
+                            } else {
+
+                                label->setMaximumWidth(320);
+                            }
+                            
+                            label->setStyleSheet(
+                                "color: white; font-size: 14px; background: transparent;"
+                            );
+
+                            layout->addWidget(label);
+
+                            toast->setStyleSheet(
+                                QString(
+                                    "QFrame#juliaToast {"
+                                    "background-color: %1;"
+                                    "border-radius: 8px;"
+                                    "}"
+                                ).arg(background)
+                            );
+
+                            toast->adjustSize();
+
+                            const QRect bounds = window->frameGeometry();
+                            const int margin = 16;
+
+                            int x = bounds.right() - toast->width() - margin;
+                            int y = bounds.bottom() - toast->height() - margin;
+
+                            if (position.contains("left")) {
+                                x = bounds.left() + margin;
+                            } else if (position.contains("center")) {
+                                x = bounds.center().x() - toast->width() / 2;
+                            }
+
+                            if (position.startsWith("top")) {
+                                y = bounds.top() + margin;
+                            }
+
+                            toast->move(x, y);
+                            toast->show();
+                            toast->raise();
+
+                            QTimer::singleShot(duration, toast, [toast]() {
+                                toast->deleteLater();
+                            });
+                        }
                         // Jika perintah terkait clipboard, lakukan operasi yang sesuai.
                         else if (command.startsWith("clipboard.")) {
 
@@ -314,7 +416,7 @@ JuliaRuntime::JuliaRuntime()
                         applyVirtualListPatches(message);
                     } else if (type == "storageRequest") {
                         handleStorageRequest(message);
-                    }
+                    } 
                     // Pesan untuk render UI
                     else {
                         renderUI(json);

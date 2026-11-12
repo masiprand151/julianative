@@ -21,7 +21,8 @@ export type ComponentType =
   | "DatePicker"
   | "Spacer"
   | "Divider"
-  | "Select";
+  | "Select"
+  | "Toast";
 
 export type EventHandler = (...args: any[]) => void;
 export type EventMap = Record<string, string>;
@@ -68,6 +69,23 @@ export interface ProgressBarProps {
   disabled?: boolean;
   onChange?: (value: number) => void;
   style?: StyleProps;
+}
+
+export type ToastType = "success" | "error" | "warning" | "info";
+
+export type ToastPosition =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
+
+export interface ToastProps {
+  message: string;
+  type?: ToastType;
+  duration?: number;
+  position?: ToastPosition;
 }
 
 export interface DatePickerProps {

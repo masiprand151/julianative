@@ -5,12 +5,12 @@ import {
   Card,
   Column,
   Text,
+  Toast,
   Divider,
   Select,
 } from "@julia/core/components";
 
 import { styles } from "./styles";
-import { Spacer } from "@julia/core/components/Spacer";
 
 function Main() {
   const [count, setCount] = useState(0);
@@ -55,7 +55,16 @@ function Main() {
               }),
               Button({
                 text: "add number",
-                onClick: () => setCount((currentCount) => currentCount + 1),
+                onClick: () => {
+                  setCount((currentCount) => currentCount + 1);
+                  Toast.show({
+                    message: "Data berhasil disimpan!",
+                    type: "success",
+                    duration: 3000,
+                    position: "top-center",
+                    width: 340,
+                  });
+                },
                 style: styles.primaryButton,
               }),
             ],

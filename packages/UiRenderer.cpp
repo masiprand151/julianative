@@ -8,6 +8,7 @@
 #include <QDateEdit>
 #include <QDate>
 #include <QComboBox>
+#include <QTimer>
 
 QWidget *JuliaRuntime::createNode(const QJsonObject &data)
 {
@@ -697,6 +698,99 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
 
         return divider;
     }
+
+
+    // Toast
+    // if (type == "Toast") {
+
+    //     auto *toast = new QFrame(window);
+
+    //     const QString message =
+    //         props["message"].toString();
+
+    //     const QString toastType =
+    //         props["type"].toString("info");
+
+    //     const int duration =
+    //         qMax(500, props["duration"].toInt(3000));
+
+    //     QString background = "#2563EB";
+
+    //     if (toastType == "success") {
+    //         background = "#16A34A";
+    //     } else if (toastType == "error") {
+    //         background = "#DC2626";
+    //     } else if (toastType == "warning") {
+    //         background = "#D97706";
+    //     }
+
+    //     auto *layout = new QHBoxLayout(toast);
+    //     layout->setContentsMargins(16, 12, 16, 12);
+
+    //     auto *label = new QLabel(message, toast);
+    //     label->setStyleSheet(
+    //         "color: white; font-size: 14px; background: transparent;"
+    //     );
+
+    //     layout->addWidget(label);
+
+    //     toast->setStyleSheet(
+    //         QString(
+    //             "QFrame {"
+    //             "background-color: %1;"
+    //             "border-radius: 8px;"
+    //             "}"
+    //         ).arg(background)
+    //     );
+
+    //     toast->setAttribute(Qt::WA_ShowWithoutActivating);
+    //     toast->setWindowFlags(
+    //         Qt::Tool |
+    //         Qt::FramelessWindowHint |
+    //         Qt::WindowStaysOnTopHint
+    //     );
+
+    //     toast->adjustSize();
+
+    //     const QString position =
+    //         props["position"].toString("bottom-right");
+
+    //     const QRect screen = window->screen()
+    //         ? window->screen()->availableGeometry()
+    //         : QApplication::primaryScreen()->availableGeometry();
+
+    //     const int margin = 20;
+
+    //     int x = screen.right() - toast->width() - margin;
+    //     int y = screen.bottom() - toast->height() - margin;
+
+    //     if (position.contains("left")) {
+    //         x = screen.left() + margin;
+    //     } else if (position.contains("center")) {
+    //         x = screen.center().x() - toast->width() / 2;
+    //     }
+
+    //     if (position.startsWith("top")) {
+    //         y = screen.top() + margin;
+    //     }
+
+    //     toast->move(x, y);
+    //     toast->show();
+    //     toast->raise();
+
+    //     connect(
+    //         toast,
+    //         &QObject::destroyed,
+    //         toast,
+    //         []() {}
+    //     );
+
+    //     QTimer::singleShot(duration, toast, [toast]() {
+    //         toast->deleteLater();
+    //     });
+
+    //     return nullptr;
+    // }
 
     return nullptr;
 }
