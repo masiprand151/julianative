@@ -1,5 +1,13 @@
 import { Application, useState } from "@julia/core";
-import { Button, Builder, Card, Column, Text } from "@julia/core/components";
+import {
+  Button,
+  Builder,
+  Card,
+  Column,
+  Text,
+  Divider,
+  Select,
+} from "@julia/core/components";
 
 import { styles } from "./styles";
 import { Spacer } from "@julia/core/components/Spacer";
@@ -51,17 +59,6 @@ function Main() {
                 style: styles.primaryButton,
               }),
             ],
-          }),
-
-          Spacer({ size: 1 }),
-
-          Button({
-            text: "Button Bawah",
-          }),
-          Spacer({ size: 10 }),
-
-          Button({
-            text: "Button Bawah",
           }),
         ],
       }),

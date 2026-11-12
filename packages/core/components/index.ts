@@ -18,3 +18,6 @@ export * from "./RadioButton";
 export * from "./Switch";
 export * from "./ProgressBar";
 export * from "./DatePicker";
+export * from "./Spacer";
+export * from "./Divider";
+export * from "./Select";

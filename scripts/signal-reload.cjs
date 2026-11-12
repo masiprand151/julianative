@@ -1,7 +1,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const root = path.resolve(__dirname, "..");
+const root = process.cwd();
+// const root = path.resolve(__dirname, "..");
 
 const signalPath = path.join(root, "packages", "build", ".dev-reload");
 

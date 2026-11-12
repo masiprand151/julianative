@@ -15,6 +15,7 @@ import {
   checkboxDispatchChange,
   DatePickerDispatchChange,
   ProgressBarDispatchChange,
+  SelectDispatchChange,
 } from "./components";
 import { switchDispatchChange } from "./components/Switch";
 import { radioButtonDispatchChange } from "./components/RadioButton";
@@ -551,6 +552,9 @@ const normalizeEvnetChange = (id: string, value: any): void => {
 
   if (String(id).startsWith("date_")) {
     DatePickerDispatchChange(id, value);
+  }
+  if (String(id).startsWith("select_")) {
+    SelectDispatchChange(id, value);
   }
 };
 

@@ -19,7 +19,9 @@ export type ComponentType =
   | "RadioButton"
   | "ProgressBar"
   | "DatePicker"
-  | "Spacer";
+  | "Spacer"
+  | "Divider"
+  | "Select";
 
 export type EventHandler = (...args: any[]) => void;
 export type EventMap = Record<string, string>;
@@ -223,6 +225,20 @@ export interface LayoutProps {
   children?: VNode[];
 }
 
+export interface SelectOption {
+  label: string;
+  value: string;
+}
+
+export interface SelectProps {
+  options: SelectOption[];
+  value?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  style?: StyleProps;
+  onChange?: (value: string) => void;
+}
+
 export interface GridProps {
   columns?: number;
   spacing?: CSSLength;
@@ -232,6 +248,13 @@ export interface GridProps {
   padding?: CSSLength | BoxSpacing;
   style?: ViewStyle;
   children?: VNode[];
+}
+
+export interface DividerProps {
+  color?: string;
+  thickness?: number;
+  orientation?: "horizontal" | "vertical";
+  spacing?: number;
 }
 
 export interface ViewStyle extends StyleProps {

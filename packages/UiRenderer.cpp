@@ -7,7 +7,7 @@
 #include <QSlider>
 #include <QDateEdit>
 #include <QDate>
-
+#include <QComboBox>
 
 QWidget *JuliaRuntime::createNode(const QJsonObject &data)
 {
@@ -578,6 +578,125 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
         return widget;
     }
 
+
+    // select
+    if (type == "Select") {
+
+        auto *select = new QComboBox();
+
+        const QJsonArray options = props["options"].toArray();
+
+        for (const QJsonValue &value : options) {
+
+            const QJsonObject option = value.toObject();
+
+            select->addItem(
+                option["label"].toString(),
+                option["value"].toString()
+            );
+        }
+
+        const QString currentValue = props["value"].toString();
+
+        const int currentIndex = select->findData(currentValue);
+
+        if (currentIndex >= 0) {
+            select->setCurrentIndex(currentIndex);
+        } else if (!props["placeholder"].toString().isEmpty()) {
+            select->insertItem(
+                0,
+                props["placeholder"].toString(),
+                ""
+            );
+
+            select->setCurrentIndex(0);
+        }
+
+        select->setEnabled(
+            !props["disabled"].toBool(false)
+        );
+
+        applyStyle(
+            select,
+            props["style"].toObject(),
+            {},
+            true
+        );
+
+        const QString eventId = events["change"].toString();
+
+        connect(
+            select,
+            &QComboBox::currentIndexChanged,
+            this,
+            [this, select, eventId](int index) {
+
+                if (eventId.isEmpty() || index < 0) return;
+
+                QJsonObject message;
+
+                message["type"] = "change";
+                message["id"] = eventId;
+                message["value"] = select->itemData(index).toString();
+
+                node->write(
+                    QJsonDocument(message)
+                        .toJson(QJsonDocument::Compact) + "\n"
+                );
+            }
+        );
+
+        return select;
+    }
+
+    // divider
+    if (type == "Divider") {
+
+        auto *divider = new QFrame();
+
+        const QString orientation =
+            props["orientation"].toString("horizontal");
+
+        const int thickness = qMax(
+            1,
+            props["thickness"].toInt(1)
+        );
+
+        const QString color =
+            props["color"].toString("#D9D9D9");
+
+        if (orientation == "vertical") {
+
+            divider->setFrameShape(QFrame::VLine);
+            divider->setFixedWidth(thickness);
+
+            divider->setSizePolicy(
+                QSizePolicy::Fixed,
+                QSizePolicy::Expanding
+            );
+
+        } else {
+
+            divider->setFrameShape(QFrame::HLine);
+            divider->setFixedHeight(thickness);
+
+            divider->setSizePolicy(
+                QSizePolicy::Expanding,
+                QSizePolicy::Fixed
+            );
+        }
+
+        divider->setFrameShadow(QFrame::Plain);
+        divider->setLineWidth(thickness);
+
+        divider->setStyleSheet(
+            QString(
+                "QFrame { background-color: %1; border: none; }"
+            ).arg(color)
+        );
+
+        return divider;
+    }
 
     return nullptr;
 }
