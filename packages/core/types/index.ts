@@ -18,7 +18,8 @@ export type ComponentType =
   | "Switch"
   | "RadioButton"
   | "ProgressBar"
-  | "DatePicker";
+  | "DatePicker"
+  | "Spacer";
 
 export type EventHandler = (...args: any[]) => void;
 export type EventMap = Record<string, string>;
@@ -168,6 +169,13 @@ export interface BoxSpacing {
   right?: CSSLength;
   bottom?: CSSLength;
   left?: CSSLength;
+}
+
+export interface SpacerProps {
+  size?: number;
+  flex?: number;
+  width?: number;
+  height?: number;
 }
 
 export type CursorType =

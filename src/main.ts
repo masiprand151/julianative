@@ -2,6 +2,7 @@ import { Application, useState } from "@julia/core";
 import { Button, Builder, Card, Column, Text } from "@julia/core/components";
 
 import { styles } from "./styles";
+import { Spacer } from "@julia/core/components/Spacer";
 
 function Main() {
   const [count, setCount] = useState(0);
@@ -50,6 +51,17 @@ function Main() {
                 style: styles.primaryButton,
               }),
             ],
+          }),
+
+          Spacer({ size: 1 }),
+
+          Button({
+            text: "Button Bawah",
+          }),
+          Spacer({ size: 10 }),
+
+          Button({
+            text: "Button Bawah",
           }),
         ],
       }),

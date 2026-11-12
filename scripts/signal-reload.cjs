@@ -2,8 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const signalPath = path.resolve(
-  __dirname,
-  "..",
+  process.cwd(),
   "packages",
   "build",
   ".dev-reload",

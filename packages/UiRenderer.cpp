@@ -517,6 +517,68 @@ QWidget *JuliaRuntime::createNodeImpl(const QJsonObject &data)
         return nullptr;
     }
 
+
+
+
+    if (type == "Spacer") {
+        auto *widget = new QWidget();
+
+        const bool hasWidth =
+            props.contains("width") && props["width"].isDouble();
+
+        const bool hasHeight =
+            props.contains("height") && props["height"].isDouble();
+
+        const int size = props["size"].toInt(0);
+        const int width = props["width"].toInt();
+        const int height = props["height"].toInt();
+
+        const int flex = qMax(0, props["flex"].toInt(0));
+
+        // Ukuran persegi jika size diberikan.
+        if (size > 0 && !hasWidth && !hasHeight) {
+            widget->setFixedSize(size, size);
+        } else {
+            // Ukuran horizontal.
+            if (hasWidth) {
+                widget->setFixedWidth(width);
+            }
+
+            // Ukuran vertikal.
+            if (hasHeight) {
+                widget->setFixedHeight(height);
+            }
+        }
+
+        // Flex akan dibaca oleh createFlexContainer().
+        QSizePolicy policy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Expanding
+        );
+
+        if (flex <= 0) {
+            if (hasWidth || size > 0) {
+                policy.setHorizontalPolicy(QSizePolicy::Fixed);
+            }
+
+            if (hasHeight || size > 0) {
+                policy.setVerticalPolicy(QSizePolicy::Fixed);
+            }
+
+            if (!hasWidth && !hasHeight && size <= 0) {
+                policy.setHorizontalPolicy(QSizePolicy::Fixed);
+                policy.setVerticalPolicy(QSizePolicy::Fixed);
+                widget->setFixedSize(0, 0);
+            }
+        }
+
+        widget->setSizePolicy(policy);
+        widget->setStyleSheet("background: transparent;");
+
+        return widget;
+    }
+
+
     return nullptr;
 }
 
